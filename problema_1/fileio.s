@@ -2,18 +2,12 @@
 @ The fd parameter needs to be a register.
 @ Uses R0, R1, R7.
 @ Return code is in R0.
-.include "unistd.s"
 
-.equ O_RDONLY, 0
-.equ O_WRONLY, 1
-.equ O_CREAT, 0100
-.equ S_RDWR, 00002   @0666
-
-.macro openFile fileName, flags
+.macro openFile fileName
     ldr r0, =\fileName
-    mov r1, #\flags
+    ldr r1, =accessFlags
 
-    mov r2, #S_RDWR @ RW access rights
+    ldr r2, =accessMode @#S_RDWR @ RW access rights
     mov r7, #sys_open
     svc 0
 .endm
