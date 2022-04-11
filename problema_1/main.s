@@ -1,8 +1,7 @@
 @
-@.include "gpiomem.s"
+.include "gpiomem.s" @ already imports fileio.s
 @
-.include "fileio.s"
-@
+
 .equ pagelen, 4096
 .equ setregoffset, 28
 .equ clrregoffset, 40
@@ -34,10 +33,11 @@ memMapErr: .asciz "Failed to map memory\n"
 memMapsz: .word .-memMapErr
 accessFlags: .word O_RDWR + O_SYNC @ 00000002 + 00010000
 accessMode: .word S_RDWR @0666
-@protectOptions: .word PROT_READ + PROT_WRITE 
+protectOptions: .word PROT_READ + PROT_WRITE 
 
 @ mem address of gpio register / 4096
-gpioaddr: .word 0x20200 @ 0x7E20100
+gpioaddr: .word 0x20200 
+uartaddr: .word 0xbee1e100 @ 0x7E20100
 pin17: .word 4 @ offset to select register
  .word 21 @ bit offset in select register
  .word 17 @ bit offset in set & clr register
@@ -55,10 +55,10 @@ pin27: .word 8 @ offset to select register
 _start:
     @ R8 will contain the virtual address of the peripheral physical address passed 
     mapMem gpioaddr 
-
+    
 _end: 
     @ branch used by mapMem macro
-    mov R0, #0 @ Use 0 return code
-    mov R7, #1 @ Command code 1 terms
-    svc 0 @ Linux command to terminate
+    MOV R0, #0 @ Use 0 return code
+    MOV R7, #1 @ Command code 1 terms
+    SVC 0 @ Linux command to terminate
 

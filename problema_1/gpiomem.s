@@ -30,7 +30,7 @@
     MOV r1, #pagelen @ size of mem we want
 
 @ mem protection options
-    MOV r2, #(PROT_READ + PROT_WRITE) @ protectOptions
+    LDR r2, =protectOptions @ #(PROT_READ + PROT_WRITE)
     MOV r3, #MAP_SHARED @ mem share options
     MOV r0, #0 @ let linux choose a virtual address
     
