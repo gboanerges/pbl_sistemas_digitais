@@ -1,0 +1,29 @@
+
+State Machine - |top_dht|control3:control3|state
+Name state.resposta2 state.wait_2 state.resposta1 state.wait_1 state.dht11_comu state.dado1 
+state.dado1 0 0 0 0 0 0 
+state.dht11_comu 0 0 0 0 1 1 
+state.wait_1 0 0 0 1 0 1 
+state.resposta1 0 0 1 0 0 1 
+state.wait_2 0 1 0 0 0 1 
+state.resposta2 1 0 0 0 0 1 
+
+State Machine - |top_dht|DHT11:DHT11|STATE
+Name STATE.STOP STATE.S9 STATE.S8 STATE.S7 STATE.S6 STATE.S5 STATE.S4 STATE.S3 STATE.S2 STATE.S1 STATE.S0 STATE.START 
+STATE.START 0 0 0 0 0 0 0 0 0 0 0 0 
+STATE.S0 0 0 0 0 0 0 0 0 0 0 1 1 
+STATE.S1 0 0 0 0 0 0 0 0 0 1 0 1 
+STATE.S2 0 0 0 0 0 0 0 0 1 0 0 1 
+STATE.S3 0 0 0 0 0 0 0 1 0 0 0 1 
+STATE.S4 0 0 0 0 0 0 1 0 0 0 0 1 
+STATE.S5 0 0 0 0 0 1 0 0 0 0 0 1 
+STATE.S6 0 0 0 0 1 0 0 0 0 0 0 1 
+STATE.S7 0 0 0 1 0 0 0 0 0 0 0 1 
+STATE.S8 0 0 1 0 0 0 0 0 0 0 0 1 
+STATE.S9 0 1 0 0 0 0 0 0 0 0 0 1 
+STATE.STOP 1 0 0 0 0 0 0 0 0 0 0 1 
+
+State Machine - |top_dht|UART_rs232_rx:I_RS232RX|State
+Name State.READ 
+State.IDLE 0 
+State.READ 1 
