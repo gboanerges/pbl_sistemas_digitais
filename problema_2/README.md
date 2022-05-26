@@ -16,8 +16,9 @@
 • <a href="#demo">Demonstração</a>  <br>  
 • <a href="#todo">Recursos a serem implementados</a>   <br>
 • <a href="#considera">Considerações finais</a>   <br>
-• <a href="#ref">Referências externas</a>   <br>
-• <a href="#equipe">Equipe</a> 
+• <a href="#equipe">Equipe</a>  <br>
+• <a href="#ref">Referências externas</a>  
+
 </p>
 
 <h4 id="status" align="center"> ✅ Finalizado ✅ </h4>
