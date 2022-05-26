@@ -139,7 +139,7 @@ $ sudo ./main
  <p align="justify">
 3) Possuindo o Quartus instalado, basta abrir o projeto e compilar.
 
- Atribuir pinos da GPIO da FPGA para o Tx, Rx e DHT_DATA. Após a compilação e pinagem, é possível realizar a <b>descarga</b> do projeto para a FPGA.
+Atribuir pinos da GPIO da FPGA para o Tx, Rx e DHT_DATA. Além isso, é necessário efetuar a pinagem  do Clk (clock) e Rst_n (Reset). Após a compilação e pinagem, é possível realizar a <b>descarga</b> do projeto para a FPGA.
 
 </p>
 
@@ -237,7 +237,7 @@ Imagem 4 - Paridade
 * Modularização para utilização de outros tipos de sensores
 
 <h2 id="considera" > Considerações finais</h2>
-	<p>O projeto, até então, ainda não cumpre todas as funcionalidades desejadas. Porém, a atual implementação permite suprimir parte dos requisitos. </p>
+<p>O projeto, até então, ainda não cumpre todas as funcionalidades desejadas. Porém, a atual implementação permite suprimir parte dos requisitos. </p>
 
 <p>Conseguimos realizar a implementação da UART para o envio e o recebimento de dados entre o SBC e a FPGA e ativação do sensor DHT11. Porém, não possível receber o dado retornado pelo sensor no SBC. </p>
 
