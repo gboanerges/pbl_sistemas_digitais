@@ -10,7 +10,8 @@
 • <a href="#tec">Tecnologias</a> <br>
 • <a href="#problema"> Problema</a> <br>  
 • <a href="#uart">UART</a> <br> 
-• <a href="#fpga">Entradas e saídas da FPGA</a> <br> 
+• <a href="#fpga">Módulos implementados na FPGA</a> <br> 
+• <a href="#fpga2">Entradas e saídas da FPGA</a> <br> 
 • <a href="#instalacao">Guia de uso</a>  <br>  
 • <a href="#demo">Demonstração</a>  <br>  
 • <a href="#todo">Recursos a serem implementados</a>   <br>
@@ -93,7 +94,7 @@ Para a implementação dos requisitos do sistema por parte da FPGA utilizamos a 
 <p><b>control3</b>: módulo responsável por verificar qual dados foi recebido do SBC por meio da UART, habilitar a comunicação do módulo DHT11 com o sensor, selecionar os dados recebidos do módulo do DHT11 e habilitar a transmissão dos dados de volta para a SBC.</p>
 <p><b>TRI_STATE</b>: módulo responsável por alterar o estado da entrada/saída do sensor DHT11. Como o sensor utiliza apenas um único pino tanto para entrada quanto para saída de dados, é necessário utilizar o módulo TRI_STATE para efetuar a seleção, se me determinado momento o pino atuará como entrada ou como saída de dados.</p>
 
-## Entradas e saídas da FPGA
+<h2 id="fpga2">Entradas e saídas da FPGA</h2>
 <p>O módulo <b>top_dht</b> é responsável pelas saídas e entradas da FPGA.</p>
 <p>As entradas são:
 
