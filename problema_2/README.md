@@ -58,7 +58,7 @@ Um dos requisitos foi utilizar a já implementada UART em linguagem  Assembly de
  2) Mapeando o endereço base da UART da Raspberry Pi Zero  e enviando um dado - recebido como parâmetro do C
  3) Mapeando o endereço base da UART da Raspberry Pi Zero e esperar o recebimento de 1 byte. 
 
-Afim de facilitar a compilação destes códigos, utilizou-se um arquivo ***makefile***, com os comandos: 
+Afim de facilitar a compilação destes códigos, utilizou-se um arquivo <b>makefile</b>, com os comandos: 
 
 ```bash
 make
@@ -69,7 +69,7 @@ Com o <b>make</b> os arquivos são compilados e o comando <b>make clean</b> remo
 ```bash
 sudo ./main
 ```
-O comando *sudo ./main* executa o programa em C.
+O comando <b>sudo ./main</b> executa o programa em C.
 
  </p>
 
@@ -100,14 +100,14 @@ Para a implementação dos requisitos do sistema por parte da FPGA utilizamos a 
  - `Clk`: entrada do clock.
  - `Rst_n`: entrada de reset do sistema. (lógica invertida, reseta em nível lógico baixo)
  - `Rx`: entrada (recebimento) de dados da UART.
- - `dht11`: entrada de dados do sensor DHT11 (essa saída também é uma entrada).
+ - `dht11`: entrada de dados do sensor DHT11 (essa entrada também é uma saída).
 </p>
 <p>As saídas são:
 
  - `Tx`: saída (envio) de dados da UART.
  - `RxData`: saída de 8 bits com os dados recebido pela UART. Neste projeto, utilizamos essa saída para debug, exibindo o dado recebido na matriz de LEDs presente na placa.
  - `col`: saída para ativar uma das colunas da matriz de LEDs.
- - `dht11`: saída de dados para a comunicação com o DHT11 (essa entrada também é uma saída).
+ - `dht11`: saída de dados para a comunicação com o DHT11 (essa saída também é uma entrada).
 
 </p>
 
@@ -124,7 +124,7 @@ Para utilizar o projeto é necessário:
 $ cd problema_2/uart_assembly
 ```
  <p align="justify">
-Na pasta uart_assembly há 5 arquivos relativos ao programa em C. Sendo necessário passar para uma Raspberry Pi 0 (por conta do mapeamento da memória), executar o comando __make__ (compilar) e o **sudo ./main**  para executar.
+Na pasta uart_assembly há 5 arquivos relativos ao programa em C. Sendo necessário passar para uma Raspberry Pi 0 (por conta do mapeamento da memória), executar o comando <b>make</b> (compilar) e o <b>sudo ./main</b>  para executar.
 </p>
 
 ```bash
