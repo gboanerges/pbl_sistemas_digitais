@@ -55,7 +55,7 @@ Implementar um sistema que será comandado por um Single Board Computer (SBC), e
 Um dos requisitos foi utilizar a já implementada UART em linguagem  Assembly dentro do código em C. Para isso, foi necessário criar 3 arquivos da UART em Assembly e compilar como biblioteca. 
 
  1) Configuração da UART com os parâmetros: 8 bits de tamanho da mensagem e 1 stop bit.
- 2) Mapeando o endereço base da UART da Raspberry Pi Zero  e enviando um dado - recebido como parâmetro do C, e 
+ 2) Mapeando o endereço base da UART da Raspberry Pi Zero  e enviando um dado - recebido como parâmetro do C
  3) Mapeando o endereço base da UART da Raspberry Pi Zero e esperar o recebimento de 1 byte. 
 
 Afim de facilitar a compilação destes códigos, utilizou-se um arquivo ***makefile***, com os comandos: 
@@ -64,7 +64,7 @@ Afim de facilitar a compilação destes códigos, utilizou-se um arquivo ***make
 make
 make clean
 ```
-Com o **make** os arquivos são compilados e o comando **make clean** remove os arquivos binários, a biblioteca e o arquivo executável, de modo a evitar algum erro de arquivo não atualizado ( se for necessário alterar algum dos arquivos).
+Com o ***make*** os arquivos são compilados e o comando ***make clean*** remove os arquivos binários, a biblioteca e o arquivo executável, de modo a evitar algum erro de arquivo não atualizado ( se for necessário alterar algum dos arquivos).
 
 ```bash
 sudo ./main
@@ -164,17 +164,17 @@ As possíveis respostas são descritas abaixo, na tabela 2. Se não apresentar c
 
 Tabela 2– Comandos de resposta
 | Código | Descrição |
-|:------:|:-----------------------------------:|
-| 0x78   | Sensor com problema.|
-| 0x66   | Sensor funcionando normalmente.   |
-| 0x7E  | Comando desconhecido.      |
+|:------:|:------------------------------:|
+| 0x78   | Sensor com problema.           |
+| 0x66   | Sensor funcionando normalmente.|
+| 0x7E  | Comando desconhecido.           |
  </div>
 
 <h2 id="demo" >Demonstração</h2>
 
 O GIF a seguir demonstra a comunicação com o sensor DHT11, os pulsos de sincronismo e dos 40 bits de dados.
 
-![Alt Text](https://media1.giphy.com/media/vv2izDpU3MLKUibhe6/giphy.gif?cid=790b7611bfa5451fbf94fb2ad7bb4d961fa0b4d329e902a8&rid=giphy.gif&ct=g)
+![GIF Resposta DHT11](https://github.com/gboanerges/pbl_sistemas_digitais/blob/main/problema_2/assets/resposta_dht11.gif?raw=true)
 
 <p align="justify">
 Nas imagens abaixo podemos distinguir os dados que o DHT11 devolve. Primeiro começa com pulsos de sincronismo, 18 mS em 1 e 80 uS em 0 e 1 novamente. A partir do bit 3 são os 40 bits de resposta do sensor.
