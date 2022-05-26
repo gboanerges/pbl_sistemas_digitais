@@ -237,11 +237,15 @@ Imagem 4 - Paridade
 * Modularização para utilização de outros tipos de sensores
 
 <h2 id="considera" > Considerações finais</h2>
-<p>O projeto, até então, ainda não cumpre todas as funcionalidades desejadas. Porém, a atual implementação permite suprimir parte dos requisitos. </p>
 
-<p>Conseguimos realizar a implementação da UART para o envio e o recebimento de dados entre o SBC e a FPGA e ativação do sensor DHT11. Porém, não possível receber o dado retornado pelo sensor no SBC. </p>
+<p align="justify">
+O projeto, até então, ainda não cumpre todas as funcionalidades desejadas. Porém, a atual implementação permite suprimir parte dos requisitos.
 
-<p>Foi possível constatar o funcionamento desses recursos por meio de testes de Loopback entre a própria Raspberry Pi Zero, entre a Raspberry Pi Zero e a FPGA e também por meio do uso da matriz de LEDs para exibir os dados recebidos na FPGA . Já para a constatação da ativação e aquisição de dados do sensor, efetuamos o uso do osciloscópio o qual nos permitiu visualizar os dados fornecidos pelo sensor DHT11.</p>
+Conseguimos realizar a implementação da UART para o envio e o recebimento de dados entre o SBC e a FPGA e ativação do sensor DHT11. Porém, não possível receber o dado retornado pelo sensor no SBC. 
+
+Foi possível constatar o funcionamento desses recursos por meio de testes de Loopback entre a própria Raspberry Pi Zero, entre a Raspberry Pi Zero e a FPGA e também por meio do uso da matriz de LEDs para exibir os dados recebidos na FPGA . Já para a constatação da ativação e aquisição de dados do sensor, efetuamos o uso do osciloscópio o qual nos permitiu visualizar os dados fornecidos pelo sensor DHT11.
+	
+</p>
 
 <h2 id="equipe" >Equipe</h2>
 
