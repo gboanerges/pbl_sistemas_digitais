@@ -64,7 +64,7 @@ Afim de facilitar a compilação destes códigos, utilizou-se um arquivo ***make
 make
 make clean
 ```
-Com o ***make*** os arquivos são compilados e o comando ***make clean*** remove os arquivos binários, a biblioteca e o arquivo executável, de modo a evitar algum erro de arquivo não atualizado ( se for necessário alterar algum dos arquivos).
+Com o <b>make</b> os arquivos são compilados e o comando <b>make clean</b> remove os arquivos binários, a biblioteca e o arquivo executável, de modo a evitar algum erro de arquivo não atualizado (se for necessário alterar algum dos arquivos).
 
 ```bash
 sudo ./main
@@ -86,21 +86,21 @@ Para a implementação dos requisitos do sistema por parte da FPGA utilizamos a 
  - control3
  - TRI_STATE
 </p>
-<p>*top_dht*:  o módulo top-level do projeto, sendo responsável por instanciar todos os outros módulos e efetuar as interconexões entre módulos, entradas e saídas da FPGA. </p>
-<p>*UART_rs232_tx*: módulo da UART responsável por transmitir os dados.</p>
-<p>*UART_rs232_rx*: módulo da UART responsável por receber os dados.</p>
-<p>*DHT11*: módulo responsável por controlar o sensor DHT11. O módulo efetua a comunicação com o sensor, recebe os dados e os transmite para suas saídas.</p>
-<p>*control3*: módulo responsável por verificar qual dados foi recebido do SBC por meio da UART, habilitar a comunicação do módulo DHT11 com o sensor, selecionar os dados recebidos do módulo do DHT11 e habilitar a transmissão dos dados de volta para a SBC.</p>
-<p>*TRI_STATE*: módulo responsável por alterar o estado da entrada/saída do sensor DHT11. Como o sensor utiliza apenas um único pino tanto para entrada quanto para saída de dados, é necessário utilizar o módulo TRI_STATE para efetuar a seleção, se me determinado momento o pino atuará como entrada ou como saída de dados.</p>
+<p><b>top_dht</b>:  o módulo top-level do projeto, sendo responsável por instanciar todos os outros módulos e efetuar as interconexões entre módulos, entradas e saídas da FPGA. </p>
+<p><b>UART_rs232_tx</b>: módulo da UART responsável por transmitir os dados.</p>
+<p><b>UART_rs232_rx</b>: módulo da UART responsável por receber os dados.</p>
+<p><b>DHT11</b>: módulo responsável por controlar o sensor DHT11. O módulo efetua a comunicação com o sensor, recebe os dados e os transmite para suas saídas.</p>
+<p><b>control3</b>: módulo responsável por verificar qual dados foi recebido do SBC por meio da UART, habilitar a comunicação do módulo DHT11 com o sensor, selecionar os dados recebidos do módulo do DHT11 e habilitar a transmissão dos dados de volta para a SBC.</p>
+<p><b>TRI_STATE</b>: módulo responsável por alterar o estado da entrada/saída do sensor DHT11. Como o sensor utiliza apenas um único pino tanto para entrada quanto para saída de dados, é necessário utilizar o módulo TRI_STATE para efetuar a seleção, se me determinado momento o pino atuará como entrada ou como saída de dados.</p>
 
 ## Entradas e saídas da FPGA
-<p>O módulo *top_dht* é responsável pelas saídas e entradas da FPGA.</p>
+<p>O módulo <b>top_dht</b> é responsável pelas saídas e entradas da FPGA.</p>
 <p>As entradas são:
 
  - `Clk`: entrada do clock.
  - `Rst_n`: entrada de reset do sistema. (lógica invertida, reseta em nível lógico baixo)
  - `Rx`: entrada (recebimento) de dados da UART.
- - `dht11`: entrada de dados do sensor DHT11 (essa entrada é do tipo inout, ou seja, também é uma saída).
+ - `dht11`: entrada de dados do sensor DHT11 (essa saída também é uma entrada).
 </p>
 <p>As saídas são:
 
@@ -124,7 +124,7 @@ Para utilizar o projeto é necessário:
 $ cd problema_2/uart_assembly
 ```
  <p align="justify">
-Na pasta uart_assembly há 5 arquivos relativos ao programa em C. Sendo necessário passar para uma Raspberry Pi 0 (por conta do mapeamento da memória), executar o comando **make** (compilar) e o **sudo ./main**  para executar.
+Na pasta uart_assembly há 5 arquivos relativos ao programa em C. Sendo necessário passar para uma Raspberry Pi 0 (por conta do mapeamento da memória), executar o comando __make__ (compilar) e o **sudo ./main**  para executar.
 </p>
 
 ```bash
