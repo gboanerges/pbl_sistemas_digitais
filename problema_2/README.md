@@ -176,45 +176,58 @@ Tabela 2– Comandos de resposta
 
 O GIF a seguir demonstra a comunicação com o sensor DHT11, os pulsos de sincronismo e dos 40 bits de dados.
 
+<div id="image01" style="display: inline_block" align="center">
+	
 ![GIF Resposta DHT11](https://github.com/gboanerges/pbl_sistemas_digitais/blob/main/problema_2/assets/resposta_dht11.gif?raw=true)
 
+</div>
+	
 <p align="justify">
 Nas imagens abaixo podemos distinguir os dados que o DHT11 devolve. Primeiro começa com pulsos de sincronismo, 18 mS em 1 e 80 uS em 0 e 1 novamente. A partir do bit 3 são os 40 bits de resposta do sensor.
 </p>
 
+<div id="image01" style="display: inline_block" align="center">
+	
 ![Pulsos de sincronismo](https://raw.githubusercontent.com/gboanerges/pbl_sistemas_digitais/main/problema_2/assets/sincronismo.png  "L")
 
-
-<p align="center">
 Imagem 1 - Pulsos de sincronismo
-<p/>
+
+</div>
+	
 <p align="justify">
 Na segunda imagem, o valor recebido da umidade foi, da esquerda para a direita, em binário, 01000011 parte inteira e 00000000 parte fracionária. Correspondendo a 67,0 % de umidade.
 <p/>
 
+<div id="image01" style="display: inline_block" align="center">
+	
 ![Umidade](https://raw.githubusercontent.com/gboanerges/pbl_sistemas_digitais/main/problema_2/assets/umidade.png  "L")
 
-<p align="center">
+
 Imagem 2 - Medição Umidade
-<p/>
+</div>
+	
 <p align="justify">
 Imagem 3, a medição de temperatura, em laranja, em binário 00011001 parte inteira e 00000000 parte fracionária. Correspondendo a 25,0 º.
 <p/>
 
+<div id="image01" style="display: inline_block" align="center">
+
 ![Temperatura](https://raw.githubusercontent.com/gboanerges/pbl_sistemas_digitais/main/problema_2/assets/temperatura.png  "L")
 
-<p align="center">
 Imagem 3 - Medição Temperatura
-<p/>
+	
+</div>
+	
 <p align="justify">
 Os últimos 8 bits da resposta do sensor DHT11 são para checar a paridade dos dados que o mesmo enviou, que foi o binário 01011100 que é 92 no sistema decimal. Somando os bits 8 a 8: parte inteira + parte fracionária da Umidade, este resultado + parte inteira da Temperatura e o resultado + parte fracionária da Temperatura. No final ao comparar precisa ser o mesmo número binário resultante, pois senão for houve erro na medição do sensor.  Fazendo as contas, 67 + 0 + 25 + 0 = 92. Então o sensor respondeu corretamente 92 = 92 (Paridade)
 <p/>
 
+<div id="image01" style="display: inline_block" align="center">
+	
 ![Paridade](https://raw.githubusercontent.com/gboanerges/pbl_sistemas_digitais/main/problema_2/assets/paridade.png  "L")
 
-<p align="center">
 Imagem 4 - Paridade
-<p/>
+</div>
 
 <h2 id="todo" > Recursos a serem implementados</h2>
 
@@ -242,7 +255,7 @@ Imagem 4 - Paridade
  - [TERMÔMETRO EM FPGA COM DHT11 [Vídeo]](https://www.youtube.com/watch?v=BkTYD7kujTk)
  - [TERMÔMETRO EM FPGA ALTERA [Vídeo]](https://www.youtube.com/watch?v=D67z1-vPH7U)
  - [Nandland Go Board Project 7 - UART Receiver [Vídeo]](https://www.youtube.com/watch?v=Vh0KdoXaVgU)
- - [Nandland Go Board Project 8 - UART Transmitter [ Vídeo]](https://www.youtube.com/watch?v=Jy5jRhDqNss)
+ - [Nandland Go Board Project 8 - UART Transmitter [Vídeo]](https://www.youtube.com/watch?v=Jy5jRhDqNss)
 </p>
 
 
