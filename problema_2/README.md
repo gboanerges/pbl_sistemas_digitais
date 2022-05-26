@@ -173,7 +173,9 @@ Tabela 2– Comandos de resposta
 <h2 id="demo" >Demonstração</h2>
 
 O GIF a seguir demonstra a comunicação com o sensor DHT11, os pulsos de sincronismo e dos 40 bits de dados.
-<iframe src="https://giphy.com/embed/vv2izDpU3MLKUibhe6" width="480" height="264" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/vv2izDpU3MLKUibhe6">via GIPHY</a></p>
+
+![Alt Text](https://media1.giphy.com/media/vv2izDpU3MLKUibhe6/giphy.gif?cid=790b7611bfa5451fbf94fb2ad7bb4d961fa0b4d329e902a8&rid=giphy.gif&ct=g)
+
 <p align="justify">
 Nas imagens abaixo podemos distinguir os dados que o DHT11 devolve. Primeiro começa com pulsos de sincronismo, 18 mS em 1 e 80 uS em 0 e 1 novamente. A partir do bit 3 são os 40 bits de resposta do sensor.
 </p>
@@ -217,6 +219,7 @@ Imagem 4 - Paridade
 * Visualização dos dados do sensor no SBC;
 * Permitir que o programa em C receba dois bytes de resultado, um para a parte inteira e outro para a parte fracionária, em caso de requisição de Temperatura ou Umidade;
 * Suporte para até 32 sensores, sendo possível requisitar a Temperatura, Umidade ou estado de qualquer um deles.
+* Modularização para utilização de outros tipos de sensores
 
 <h2 id="considera" > Considerações finais</h2>
 	<p>O projeto, até então, ainda não cumpre todas as funcionalidades desejadas. Porém, a atual implementação permite suprimir parte dos requisitos. </p>
