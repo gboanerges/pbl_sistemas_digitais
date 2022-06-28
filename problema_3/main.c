@@ -113,6 +113,24 @@ int main()
     lcdPrintf(lcd, "IoT - MQTT");
     /* Leitura dos sensores */
 
+    char medicoes[80];
+    int rc;
+
+    struct mosquitto *mosq;
+
+    mosquitto_lib_init();
+
+    mosq = mosquitto_new("publisher-test", true, NULL);
+
+    // rc = mosquitto_username_pw_set(mosq, "aluno", "aluno*123");
+    // rc = mosquitto_connect(mosq, "10.0.0.101", 1883, 5);
+    // if (rc != 0)
+    // {
+    //     printf("Error pass");
+    //     mosquitto_destroy(mosq);
+    //     return -1;
+    // }
+
     while (1)
     {
         if (flag == 1)
@@ -120,14 +138,26 @@ int main()
             flag = 0;
             read_dht11_dat(lcd, umid, &FrontUmid, &RearUmid, FrontUmid, RearUmid, temp, &FrontTemp, &RearTemp, FrontTemp, RearTemp);
             read_poten(lcd, lum, &FrontLum, &RearLum, FrontLum, RearLum, pres, &FrontPres, &RearPres, FrontPres, RearPres);
+            sprintf(medicoes, "{\"umidade\":\"%.1f\",\"temperatura\":\"%.1f\",\"luminosidade\":\"%.1f\",\"pressao\":\"%.1f\"}", umid[RearUmid], temp[RearTemp], lum[RearLum], pres[RearPres]);
+            mosquitto_publish(mosq, NULL, "test/t1", 6, medicoes, 0, false);
         }
         /* Display = 0 Exibir medicoes no lcd | Dentro das funções de leitura */
         if (display == 0)
         {
-            /* Apertar um dos 3 botoes para a acessar os menus  */
+            /*
+                Apertar um dos 3 botoes para a acessar os menus
+
+                Fica parado nessa exibiçao ate apertar novamente
+                para interagir com os menus
+            */
             if ((digitalRead(21) == LOW) || (digitalRead(24) == LOW) || (digitalRead(25) == LOW))
             {
                 display = 1;
+                lcdClear(lcd);
+                lcdPosition(lcd, 0, 0);
+                lcdPrintf(lcd, "Menu IHM: 1:Intv");
+                lcdPosition(lcd, 0, 1);
+                lcdPrintf(lcd, "2:ConfInt 3:Hist");
             }
         }
         else /* Display = 1 Exibir menus, INC/DEC Intervalo, CONF Intervalo e HISTORICO */
@@ -188,31 +218,42 @@ int main()
                     ; // aguarda enquato chave ainda esta pressionada
                 delay(50);
 
-                if (confirmar >= 2)
+                /* switch 3 = 1 */
+                /* Alternar para visualização das medicoes dos sensores */
+                if (digitalRead(2) == LOW)
                 {
-                    /* enviar intervalo via mqtt */
-                    lcdClear(lcd);
-                    lcdPosition(lcd, 0, 0);
-                    lcdPrintf(lcd, "Intervalo %i s", intervalo);
-                    lcdPosition(lcd, 0, 1);
-                    lcdPrintf(lcd, "Enviado");
-                    confirmar = 0;
+                    display = 0;
                 }
                 else
                 {
-                    confirmar++;
-                    /* Confirmar envio de intervalo */
-                    lcdClear(lcd);
-                    lcdPosition(lcd, 0, 0);
-                    lcdPrintf(lcd, "Intervalo: %i s", intervalo);
-                    lcdPosition(lcd, 0, 1);
-                    lcdPrintf(lcd, "Confirmar?");
+                    /* switch 3 = 0 */
+                    /* mostrar menu para confirmar intervalo */
+                    if (confirmar >= 2)
+                    {
+                        /* enviar intervalo via mqtt */
+                        lcdClear(lcd);
+                        lcdPosition(lcd, 0, 0);
+                        lcdPrintf(lcd, "Intervalo %i s", intervalo);
+                        lcdPosition(lcd, 0, 1);
+                        lcdPrintf(lcd, "Enviado");
+                        confirmar = 0;
+                    }
+                    else
+                    {
+                        confirmar++;
+                        /* Confirmar envio de intervalo */
+                        lcdClear(lcd);
+                        lcdPosition(lcd, 0, 0);
+                        lcdPrintf(lcd, "Intervalo: %i s", intervalo);
+                        lcdPosition(lcd, 0, 1);
+                        lcdPrintf(lcd, "Confirmar?");
+                    }
                 }
             }
             /* Ultimo botao */
             else if (digitalRead(25) == LOW)
             {
-                /* switch for 1, decrementa o indice */
+                /* switch 4 for 1, incrementa o indice */
                 if (digitalRead(3) == LOW)
                 {
                     delay(50);
@@ -236,7 +277,7 @@ int main()
                     lcdPrintf(lcd, "  L:%.1f P:%.1f", pres[index_display]);
                 }
                 else
-                { // incrementa o indice
+                { // decrementa o indice
                     delay(50);
                     while (digitalRead(25) == LOW)
                         ; // aguarda enquato chave ainda esta pressionada
