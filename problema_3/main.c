@@ -98,22 +98,12 @@ void formata_json(float arr[], char tipo_historico[], int ultima_func)
     strcat(tipo_historico, aux1);
 }
 
-// void mudar_intervalo(char *msg)
-// {
-//     int aux = 0;
-//     aux = atoi(msg);
-//     printf("Float value %i\n", aux);
-// }
-
-// void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg)
-// {
-//     printf("New message with topic %s: %s\n", msg->topic, (char *)msg->payload);
-//     if (msg->topic == "intervalo")
-//     {
-//         /* checar formato da msg? */
-//         mudar_intervalo((char *)msg->payload);
-//     }
-// }
+void mudar_interv(char *msg)
+{
+    int aux = 0;
+    aux = atoi(msg);
+    intervalo = aux;
+}
 
 void send_intervalo(const char *msg_intervalo, int msg_tamanho, struct mosquitto *mosq)
 {
@@ -156,12 +146,27 @@ void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_messag
 PI_THREAD(contar_interv)
 {
     printf("Thread Contar Intervalo.\n");
+    time_t inicio, fim;
+    double elapsed;
 
     while (1)
     {
-        delay(intervalo * 1000);
+        /* inicia a contagem */
+        time(&inicio);
+
+        printf("intervalo atual: %i\n", intervalo);
+        do
+        {
+            /* para contagem */
+            time(&fim);
+            /* salva a diferença entre o tempo inicial e o de parada */
+            elapsed = difftime(fim, inicio);
+            /* verifica se o tempo passado é menor que o intervalo */
+        } while (elapsed < intervalo);
+        /* ao passar o tempo definido pelo intervalo, chama a interrupçao  */
         ISR();
     }
+
     return (0);
 }
 
@@ -221,6 +226,9 @@ int main()
     mosquitto_publish(mosq, NULL, "test/intervalo", 1, intervalo, 0, false);
     /* Inicia loop para o subscriber do mosquitto ficar ativo */
     mosquitto_loop_start(mosq);
+
+    int aux_intervalo = 2;
+    char env_intervalo[4];
     /* Thread principal para exibicao das medicoes, menus */
     while (1)
     {
@@ -279,10 +287,10 @@ int main()
                     while (digitalRead(21) == LOW)
                         ; // aguarda enquato chave ainda esta pressionada
                     delay(50);
-                    intervalo++;
+                    aux_intervalo++;
                     lcdClear(lcd);
                     lcdPosition(lcd, 0, 0);
-                    lcdPrintf(lcd, "Intervalo: %i", intervalo);
+                    lcdPrintf(lcd, "Intervalo: %i", aux_intervalo);
                     lcdPosition(lcd, 0, 1);
                     lcdPrintf(lcd, "Incrementar");
                 }
@@ -293,20 +301,20 @@ int main()
                         ; // aguarda enquato chave ainda esta pressionada
                     delay(50);
                     /* decrementar intervalo */
-                    if (intervalo == 2)
+                    if (aux_intervalo == 2)
                     {
                         lcdClear(lcd);
                         lcdPosition(lcd, 0, 0);
-                        lcdPrintf(lcd, "Intervalo: %i", intervalo);
+                        lcdPrintf(lcd, "Intervalo: %i", aux_intervalo);
                         lcdPosition(lcd, 0, 1);
                         lcdPrintf(lcd, "< Interv Possiv");
                     }
                     else
                     {
-                        intervalo--;
+                        aux_intervalo--;
                         lcdClear(lcd);
                         lcdPosition(lcd, 0, 0);
-                        lcdPrintf(lcd, "Intervalo: %i", intervalo);
+                        lcdPrintf(lcd, "Intervalo: %i", aux_intervalo);
                         lcdPosition(lcd, 0, 1);
                         lcdPrintf(lcd, "Decrementar");
                     }
@@ -332,13 +340,16 @@ int main()
                 else
                 {
                     /* switch 3 = 0 */
-                    /* mostrar menu para confirmar intervalo */
+                    /* Confirmar >=2 envia o intervalo */
                     if (confirmar >= 2)
                     {
+                        /* Formata como string, para passar como parametro no publish */
+                        sprintf(env_intervalo, "%i", aux_intervalo);
                         /* enviar intervalo via mqtt */
+                        mosquitto_publish(mosq, NULL, "test/intervalo", 1, intervalo, 0, false);
                         lcdClear(lcd);
                         lcdPosition(lcd, 0, 0);
-                        lcdPrintf(lcd, "Intervalo %i s", intervalo);
+                        lcdPrintf(lcd, "Intervalo %i s", aux_intervalo);
                         lcdPosition(lcd, 0, 1);
                         lcdPrintf(lcd, "Enviado");
                         confirmar = 0;
@@ -346,10 +357,10 @@ int main()
                     else
                     {
                         confirmar++;
-                        /* Confirmar envio de intervalo */
+                        /* mostrar menu para confirmar intervalo */
                         lcdClear(lcd);
                         lcdPosition(lcd, 0, 0);
-                        lcdPrintf(lcd, "Intervalo: %i s", intervalo);
+                        lcdPrintf(lcd, "Intervalo: %i s", aux_intervalo);
                         lcdPosition(lcd, 0, 1);
                         lcdPrintf(lcd, "Confirmar?");
                     }
