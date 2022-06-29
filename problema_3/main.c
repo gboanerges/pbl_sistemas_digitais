@@ -153,6 +153,18 @@ void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_messag
     }
 }
 
+PI_THREAD(contar_interv)
+{
+    printf("Thread Contar Intervalo.\n");
+
+    while (1)
+    {
+        delay(intervalo * 1000);
+        ISR();
+    }
+    return (0);
+}
+
 int main()
 {
 
@@ -168,6 +180,7 @@ int main()
     pinMode(25, INPUT);            // configura pino como entrada
     pullUpDnControl(25, PUD_DOWN); // configura resistor pull-up no pino
 
+    int t = piThreadCreate(contar_interv);
     /*
         Inicializar ADS
     */
@@ -185,7 +198,6 @@ int main()
     lcdPrintf(lcd, "IoT - MQTT");
     /* Leitura dos sensores */
 
-    char medicoes[80];
     int rc;
 
     struct mosquitto *mosq;
