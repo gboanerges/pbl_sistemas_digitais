@@ -74,7 +74,7 @@ void formata_json(float arr[], char tipo_historico[], int ultima_func)
     for (i = FrontUmid; i <= RearUmid; i++)
     {
 
-        if (i < 9)
+        if (i < RearUmid)
         {
             sprintf(aux2, "\"%.1f\",", arr[i]);
             strcat(aux1, aux2);
@@ -216,9 +216,9 @@ int main()
         mosquitto_destroy(mosq);
         return -1;
     }
-
+    int FrontHist = 0, RearHist = 0;
     /* Enviar o intervalo base logo a iniciar a execucao */
-    mosquitto_publish(mosq, NULL, "test/intervalo", 400, intervalo, 0, false);
+    mosquitto_publish(mosq, NULL, "test/intervalo", 1, intervalo, 0, false);
     /* Inicia loop para o subscriber do mosquitto ficar ativo */
     mosquitto_loop_start(mosq);
     /* Thread principal para exibicao das medicoes, menus */
@@ -256,6 +256,13 @@ int main()
                 lcdPrintf(lcd, "Menu IHM: 1:Intv");
                 lcdPosition(lcd, 0, 1);
                 lcdPrintf(lcd, "2:ConfInt 3:Hist");
+                /*
+                    Variaveis para exibicao do historico no LCD
+                    salvando a posicao inicial e final do vetor
+                    umidade - 1º a ser atualizado
+                */
+                FrontHist = FrontUmid;
+                RearHist = RearUmid;
             }
         }
         else /* Display = 1 Exibir menus, INC/DEC Intervalo, CONF Intervalo e HISTORICO */
@@ -361,18 +368,20 @@ int main()
                     if (index_display == 9)
                     {
                         index_display = 0;
+                        FrontHist = RearHist - 9;
                     }
                     else
                     {
                         index_display++;
+                        FrontHist++;
                     }
 
                     lcdClear(lcd);
                     lcdPosition(lcd, 0, 0);
-                    lcdPrintf(lcd, "%i U:%.1f T:%.1f", (index_display + 1), temp[index_display]);
+                    lcdPrintf(lcd, "%i U:%.1f T:%.1f", (index_display + 1), umid[FrontHist], temp[FrontHist]);
 
                     lcdPosition(lcd, 0, 1);
-                    lcdPrintf(lcd, "  L:%.1f P:%.1f", pres[index_display]);
+                    lcdPrintf(lcd, "  L:%.1f P:%.1f", lum[FrontHist], pres[FrontHist]);
                 }
                 else
                 { // decrementa o indice
@@ -383,17 +392,19 @@ int main()
                     if (index_display == 0)
                     {
                         index_display = 9;
+                        FrontHist = RearHist;
                     }
                     else
                     {
                         index_display--;
+                        FrontHist--;
                     }
                     lcdClear(lcd);
                     lcdPosition(lcd, 0, 0);
-                    lcdPrintf(lcd, "%i U:%.1f T:%.1f", (index_display + 1), temp[index_display]);
+                    lcdPrintf(lcd, "%i U:%.1f T:%.1f", (index_display + 1), umid[FrontHist], temp[FrontHist]);
 
                     lcdPosition(lcd, 0, 1);
-                    lcdPrintf(lcd, "  L:%.1f P:%.1f", pres[index_display]);
+                    lcdPrintf(lcd, "  L:%.1f P:%.1f", lum[FrontHist], pres[FrontHist]);
                 }
                 confirmar = 0; /* zerar opcao de confirmar ao apertar outro botao */
             }
