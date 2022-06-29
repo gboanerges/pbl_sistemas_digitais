@@ -9,7 +9,7 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include "ads1115_rpi.h"
-
+#include <mosquitto.h>
 // USE WIRINGPI PIN NUMBERS
 #define LCD_RS 6  // Register select pin
 #define LCD_E 31  // Enable Pin
@@ -44,8 +44,6 @@ int RearTemp = -1, FrontTemp = -1;
 int RearLum = -1, FrontLum = -1;
 int RearPres = -1, FrontPres = -1;
 
-int intervalo = 2;
-
 // void mudar_intervalo(char *msg)
 // {
 //     int aux = 0;
@@ -72,6 +70,46 @@ int intervalo = 2;
 //         mudar_intervalo((char *)msg->payload);
 //     }
 // }
+
+int intervalo = 2; // intervalo de medição, minimo 2
+
+void send_intervalo(const char *msg_intervalo, int msg_tamanho, struct mosquitto *mosq)
+{
+    intervalo = atoi(msg_intervalo);
+    printf("%s", msg_intervalo);
+    mosquitto_publish(mosq, NULL, "teste/t2/intervalo/new", msg_tamanho, msg_intervalo, 0, true); // Envia uma mensagem com o intervalo, isso indica que o intervalo foi recebido por  que o intervalo foi alterado
+}
+
+void send_resposta(struct mosquitto *mosq)
+{
+    mosquitto_publish(mosq, NULL, "teste/t2/ping/resposta", 2, "1", 0, false); // Envia uma mensagem para informar ao cliente remoto que está conectado (sistema online)
+}
+
+void on_connect(struct mosquitto *mosq, void *obj, int rc)
+{
+    printf("ID: %d\n", *(int *)obj);
+    if (rc)
+    {
+        printf("Error with result code: %d\n", rc);
+        exit(-1);
+    }
+    char *subs[45] = {"teste/t2/ping/pedido", "teste/t2/intervalo/send"};
+    mosquitto_subscribe_multiple(mosq, NULL, 2, subs, 0, 0, NULL);
+}
+
+void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg)
+{
+    printf("New message with topic %s: %s\n", msg->topic, (char *)msg->payload);
+    if (strcmp((char *)msg->topic, "teste/t2/intervalo/send") == 0)
+    {
+        printf("%s", (char *)msg->payload);
+        send_intervalo((char *)msg->payload, msg->payloadlen, mosq);
+    }
+    else if (strcmp((char *)msg->topic, "teste/t2/ping/pedido") == 0)
+    {
+        send_resposta(mosq);
+    }
+}
 
 /* Interruption declarations */
 unsigned int flag;
@@ -121,7 +159,8 @@ int main()
     mosquitto_lib_init();
 
     mosq = mosquitto_new("publisher-test", true, NULL);
-
+    mosquitto_connect_callback_set(mosq, on_connect);
+    mosquitto_message_callback_set(mosq, on_message);
     // rc = mosquitto_username_pw_set(mosq, "aluno", "aluno*123");
     // rc = mosquitto_connect(mosq, "10.0.0.101", 1883, 5);
     // if (rc != 0)
@@ -131,6 +170,9 @@ int main()
     //     return -1;
     // }
 
+    mosquitto_publish(mosq, NULL, "test/intervalo", 80, intervalo, 0, false);
+    mosquitto_loop_start(mosq);
+
     while (1)
     {
         if (flag == 1)
@@ -139,7 +181,7 @@ int main()
             read_dht11_dat(lcd, umid, &FrontUmid, &RearUmid, FrontUmid, RearUmid, temp, &FrontTemp, &RearTemp, FrontTemp, RearTemp);
             read_poten(lcd, lum, &FrontLum, &RearLum, FrontLum, RearLum, pres, &FrontPres, &RearPres, FrontPres, RearPres);
             sprintf(medicoes, "{\"umidade\":\"%.1f\",\"temperatura\":\"%.1f\",\"luminosidade\":\"%.1f\",\"pressao\":\"%.1f\"}", umid[RearUmid], temp[RearTemp], lum[RearLum], pres[RearPres]);
-            mosquitto_publish(mosq, NULL, "test/t1", 6, medicoes, 0, false);
+            mosquitto_publish(mosq, NULL, "test/t1", 80, medicoes, 0, false);
         }
         /* Display = 0 Exibir medicoes no lcd | Dentro das funções de leitura */
         if (display == 0)
@@ -301,6 +343,11 @@ int main()
             }
         }
     }
+    mosquitto_loop_stop(mosq, true);
+
+    mosquitto_disconnect(mosq);
+    mosquitto_destroy(mosq);
+    mosquitto_lib_cleanup();
     return 0;
 }
 
