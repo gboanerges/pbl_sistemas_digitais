@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <unistd.h>
 #include <linux/i2c-dev.h>
@@ -27,7 +28,16 @@ int dht11_dat[5] = {0, 0, 0, 0, 0};
 
 int index_display = 0, confirmar = 0, display = 0, intervalo = 2;
 
-// Q declarations
+/* Interruption declarations */
+unsigned int flag;
+#pragma interrupt_handler ISR
+void ISR(void)
+{
+    flag = 1;
+}
+/* END Interrption declarations */
+
+// Fila declaracoes
 #define SIZE 10
 void enqueue(float arr[], float data, int *Front, int *Rear, int Fr, int Re);
 void dequeue(float arr[], int *Front, int *Rear, int Fr, int Re);
@@ -36,29 +46,63 @@ float temp[SIZE];
 float umid[SIZE];
 float lum[SIZE];
 float pres[SIZE];
+// End
 
-// End Q
 /* Variaveis para os vetores de medicoes */
 int RearUmid = -1, FrontUmid = -1;
 int RearTemp = -1, FrontTemp = -1;
 int RearLum = -1, FrontLum = -1;
 int RearPres = -1, FrontPres = -1;
 
+/* Variaveis para formatar em JSON os vetores de medicoes */
+char historico[400] = "{\"historico_umidade\":[";
+char temperatura[128] = "\"historico_temperatura\":[";
+char lumino[128] = "\"historico_luminosidade\":[";
+char pressao[128] = "\"historico_pressao\":[";
+
+/*
+    Percorrer e formatar os arrays das medicoes, em float, para
+    string no formato JSON
+*/
+void formata_json(float arr[], char tipo_historico[], int ultima_func)
+{
+    // printf("%s\n", tipo_historico);
+    char aux1[1200] = "";
+    int i = 0;
+    char aux2[14];
+    /* Utilizando os indices da umidade, pois é a primeira a ser lida/alterada */
+    for (i = FrontUmid; i <= RearUmid; i++)
+    {
+
+        if (i < 9)
+        {
+            sprintf(aux2, "\"%.1f\",", arr[i]);
+            strcat(aux1, aux2);
+        }
+        else
+        {
+            /* Se for a ultima funcao de historico, nao coloca virgula no final*/
+            if (ultima_func)
+            {
+                sprintf(aux2, "\"%.1f\"]}", arr[i]);
+                strcat(aux1, aux2);
+            }
+            else
+            {
+                sprintf(aux2, "\"%.1f\"],", arr[i]);
+                strcat(aux1, aux2);
+            }
+        }
+    }
+    /* Concatena a string formatada dos valores com o inicio da msg json */
+    strcat(tipo_historico, aux1);
+}
+
 // void mudar_intervalo(char *msg)
 // {
 //     int aux = 0;
 //     aux = atoi(msg);
 //     printf("Float value %i\n", aux);
-// }
-
-// void on_connect(struct mosquitto *mosq, void *obj, int rc)
-// {
-//     if (rc)
-//     {
-//         printf("Error!");
-//         exit(-1);
-//     }
-//     mosquitto_subscribe(mosq, NULL, "test/interv", 0);
 // }
 
 // void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg)
@@ -70,8 +114,6 @@ int RearPres = -1, FrontPres = -1;
 //         mudar_intervalo((char *)msg->payload);
 //     }
 // }
-
-int intervalo = 2; // intervalo de medição, minimo 2
 
 void send_intervalo(const char *msg_intervalo, int msg_tamanho, struct mosquitto *mosq)
 {
@@ -111,14 +153,6 @@ void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_messag
     }
 }
 
-/* Interruption declarations */
-unsigned int flag;
-#pragma interrupt_handler ISR
-void ISR(void)
-{
-    flag = 1;
-}
-/* END Interrption declarations */
 int main()
 {
 
@@ -161,18 +195,21 @@ int main()
     mosq = mosquitto_new("publisher-test", true, NULL);
     mosquitto_connect_callback_set(mosq, on_connect);
     mosquitto_message_callback_set(mosq, on_message);
-    // rc = mosquitto_username_pw_set(mosq, "aluno", "aluno*123");
-    // rc = mosquitto_connect(mosq, "10.0.0.101", 1883, 5);
-    // if (rc != 0)
-    // {
-    //     printf("Error pass");
-    //     mosquitto_destroy(mosq);
-    //     return -1;
-    // }
 
-    mosquitto_publish(mosq, NULL, "test/intervalo", 80, intervalo, 0, false);
+    rc = mosquitto_username_pw_set(mosq, "aluno", "aluno*123");
+    rc = mosquitto_connect(mosq, "10.0.0.101", 1883, 5);
+    if (rc != 0)
+    {
+        printf("Error pass");
+        mosquitto_destroy(mosq);
+        return -1;
+    }
+
+    /* Enviar o intervalo base logo a iniciar a execucao */
+    mosquitto_publish(mosq, NULL, "test/intervalo", 400, intervalo, 0, false);
+    /* Inicia loop para o subscriber do mosquitto ficar ativo */
     mosquitto_loop_start(mosq);
-
+    /* Thread principal para exibicao das medicoes, menus */
     while (1)
     {
         if (flag == 1)
@@ -180,8 +217,15 @@ int main()
             flag = 0;
             read_dht11_dat(lcd, umid, &FrontUmid, &RearUmid, FrontUmid, RearUmid, temp, &FrontTemp, &RearTemp, FrontTemp, RearTemp);
             read_poten(lcd, lum, &FrontLum, &RearLum, FrontLum, RearLum, pres, &FrontPres, &RearPres, FrontPres, RearPres);
-            sprintf(medicoes, "{\"umidade\":\"%.1f\",\"temperatura\":\"%.1f\",\"luminosidade\":\"%.1f\",\"pressao\":\"%.1f\"}", umid[RearUmid], temp[RearTemp], lum[RearLum], pres[RearPres]);
-            mosquitto_publish(mosq, NULL, "test/t1", 80, medicoes, 0, false);
+
+            formata_json(umid, historico, 0);
+            formata_json(temp, temperatura, 0);
+            formata_json(lum, lumino, 0);
+            formata_json(pres, pressao, 1);
+            strcat(historico, temperatura);
+            strcat(historico, lumino);
+            strcat(historico, pressao);
+            mosquitto_publish(mosq, NULL, "test/t1", 80, historico, 0, false);
         }
         /* Display = 0 Exibir medicoes no lcd | Dentro das funções de leitura */
         if (display == 0)
