@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-
+#include <stdbool.h>
 #include <unistd.h>
 #include <linux/i2c-dev.h>
 #include <sys/ioctl.h>
@@ -59,6 +59,8 @@ char historico[400] = "{\"historico_umidade\":[";
 char temperatura[128] = "\"historico_temperatura\":[";
 char lumino[128] = "\"historico_luminosidade\":[";
 char pressao[128] = "\"historico_pressao\":[";
+
+bool conexao = false;
 
 /*
     Percorrer e formatar os arrays das medicoes, em float, para
@@ -135,11 +137,17 @@ void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_messag
     if (strcmp((char *)msg->topic, "teste/t2/intervalo/send") == 0)
     {
         printf("%s", (char *)msg->payload);
-        send_intervalo((char *)msg->payload, msg->payloadlen, mosq);
+        send_intervalo((char *)msg->payload, msg->payload, mosq);
     }
     else if (strcmp((char *)msg->topic, "teste/t2/ping/pedido") == 0)
     {
         send_resposta(mosq);
+    }
+    /* Testa a conexao com o BROKER */
+    if (strcmp((char *)msg->topic, "teste/t2/ping/resposta") == 0)
+    {
+        printf("BROKER ONLINE\n");
+        conexao = true;
     }
 }
 
@@ -418,6 +426,48 @@ int main()
                     lcdPrintf(lcd, "  L:%.1f P:%.1f", lum[FrontHist], pres[FrontHist]);
                 }
                 confirmar = 0; /* zerar opcao de confirmar ao apertar outro botao */
+            }
+            else if (digitalRead(0) == LOW)
+            {
+                lcdClear(lcd);
+                lcdPosition(lcd, 0, 0);
+                lcdPrintf(lcd, "Testando a");
+                lcdPosition(lcd, 0, 1);
+                lcdPrintf(lcd, "Conexao BROKER");
+                mosquitto_publish(mosq, NULL, "teste/t2/ping/pedido", 1, "1", 0, false);
+                /* Contar 1 segundo */
+                time_t inicio, fim;
+                double tempo_total;
+                /* inicia a contagem */
+                time(&inicio);
+                do
+                {
+                    /* para contagem */
+                    time(&fim);
+                    /* salva a diferença entre o tempo inicial e o de parada */
+                    tempo_total = difftime(fim, inicio);
+                    /* verifica se o tempo passado é menor que o intervalo */
+                } while (tempo_total < 1);
+                /* Se a conexao for 1 exibe msg que esta online */
+                if (conexao)
+                {
+                    lcdClear(lcd);
+                    lcdPosition(lcd, 0, 0);
+                    lcdPrintf(lcd, "Status do Broker");
+                    lcdPosition(lcd, 0, 1);
+                    lcdPrintf(lcd, "     ONLINE     ");
+                    /* atribuir valor falso para evitar que o boolean fique sempre TRUE */
+                    conexao = false;
+                }
+                /* Senao exibe msg que esta offline */
+                else
+                {
+                    lcdClear(lcd);
+                    lcdPosition(lcd, 0, 0);
+                    lcdPrintf(lcd, "Status do Broker");
+                    lcdPosition(lcd, 0, 1);
+                    lcdPrintf(lcd, "     OFFLINE    ");
+                }
             }
         }
     }
