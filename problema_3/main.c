@@ -4,7 +4,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdbool.h>
+#include <time.h>
+
 #include <unistd.h>
 #include <linux/i2c-dev.h>
 #include <sys/ioctl.h>
@@ -60,7 +61,7 @@ char temperatura[128] = "\"historico_temperatura\":[";
 char lumino[128] = "\"historico_luminosidade\":[";
 char pressao[128] = "\"historico_pressao\":[";
 
-bool conexao = false;
+int conexao = 0;
 
 /*
     Percorrer e formatar os arrays das medicoes, em float, para
@@ -104,19 +105,24 @@ void mudar_interv(char *msg)
 {
     int aux = 0;
     aux = atoi(msg);
-    intervalo = aux;
+    printf("Intervalo recebido %i\n", aux);
+    /* Intervalo minimo igual a 2 */
+    if (intervalo >= 2)
+    {
+        intervalo = aux;
+    }
 }
 
 void send_intervalo(const char *msg_intervalo, int msg_tamanho, struct mosquitto *mosq)
 {
     intervalo = atoi(msg_intervalo);
-    printf("%s", msg_intervalo);
+    printf("%s\n", msg_intervalo);
     mosquitto_publish(mosq, NULL, "teste/t2/intervalo/new", msg_tamanho, msg_intervalo, 0, true); // Envia uma mensagem com o intervalo, isso indica que o intervalo foi recebido por  que o intervalo foi alterado
 }
 
 void send_resposta(struct mosquitto *mosq)
 {
-    mosquitto_publish(mosq, NULL, "teste/t2/ping/resposta", 2, "1", 0, false); // Envia uma mensagem para informar ao cliente remoto que está conectado (sistema online)
+    mosquitto_publish(mosq, NULL, "teste/t2/ping/resposta", 1, "1", 0, false); // Envia uma mensagem para informar ao cliente remoto que está conectado (sistema online)
 }
 
 void on_connect(struct mosquitto *mosq, void *obj, int rc)
@@ -127,8 +133,8 @@ void on_connect(struct mosquitto *mosq, void *obj, int rc)
         printf("Error with result code: %d\n", rc);
         exit(-1);
     }
-    char *subs[45] = {"teste/t2/ping/pedido", "teste/t2/intervalo/send"};
-    mosquitto_subscribe_multiple(mosq, NULL, 2, subs, 0, 0, NULL);
+    char *subs[68] = {"teste/t2/ping/pedido", "teste/t2/ping/resposta", "teste/t2/intervalo/send"};
+    mosquitto_subscribe_multiple(mosq, NULL, 3, subs, 0, 0, NULL);
 }
 
 void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg)
@@ -136,7 +142,7 @@ void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_messag
     printf("New message with topic %s: %s\n", msg->topic, (char *)msg->payload);
     if (strcmp((char *)msg->topic, "teste/t2/intervalo/send") == 0)
     {
-        printf("%s", (char *)msg->payload);
+        printf("%s\n", (char *)msg->payload);
         send_intervalo((char *)msg->payload, msg->payload, mosq);
     }
     else if (strcmp((char *)msg->topic, "teste/t2/ping/pedido") == 0)
@@ -146,8 +152,8 @@ void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_messag
     /* Testa a conexao com o BROKER */
     if (strcmp((char *)msg->topic, "teste/t2/ping/resposta") == 0)
     {
-        printf("BROKER ONLINE\n");
-        conexao = true;
+        /* altera variavel para representar que a conexao com o broker esta online */
+        conexao = 1;
     }
 }
 
@@ -155,7 +161,7 @@ PI_THREAD(contar_interv)
 {
     printf("Thread Contar Intervalo.\n");
     time_t inicio, fim;
-    double elapsed;
+    double tempo_decorrido;
 
     while (1)
     {
@@ -168,9 +174,9 @@ PI_THREAD(contar_interv)
             /* para contagem */
             time(&fim);
             /* salva a diferença entre o tempo inicial e o de parada */
-            elapsed = difftime(fim, inicio);
+            tempo_decorrido = difftime(fim, inicio);
             /* verifica se o tempo passado é menor que o intervalo */
-        } while (elapsed < intervalo);
+        } while (tempo_decorrido < intervalo);
         /* ao passar o tempo definido pelo intervalo, chama a interrupçao  */
         ISR();
     }
@@ -231,13 +237,15 @@ int main()
     }
     int FrontHist = 0, RearHist = 0;
     /* Enviar o intervalo base logo a iniciar a execucao */
-    mosquitto_publish(mosq, NULL, "test/intervalo", 1, intervalo, 0, false);
+    char str_intervalo[1];
+    sprintf(str_intervalo, "%i", intervalo);
+    mosquitto_publish(mosq, NULL, "teste/t2/intervalo/new", 1, str_intervalo, 0, false);
     /* Inicia loop para o subscriber do mosquitto ficar ativo */
     mosquitto_loop_start(mosq);
 
     int aux_intervalo = 2;
-    char env_intervalo[4];
-    /* Thread principal para exibicao das medicoes, menus */
+    int switch_2 = 0;
+    /* Thread principal para o funcionamento do sistema, exibicao das medicoes, menus */
     while (1)
     {
         if (flag == 1)
@@ -245,7 +253,7 @@ int main()
             flag = 0;
             read_dht11_dat(lcd, umid, &FrontUmid, &RearUmid, FrontUmid, RearUmid, temp, &FrontTemp, &RearTemp, FrontTemp, RearTemp);
             read_poten(lcd, lum, &FrontLum, &RearLum, FrontLum, RearLum, pres, &FrontPres, &RearPres, FrontPres, RearPres);
-
+            /*
             formata_json(umid, historico, 0);
             formata_json(temp, temperatura, 0);
             formata_json(lum, lumino, 0);
@@ -254,24 +262,29 @@ int main()
             strcat(historico, lumino);
             strcat(historico, pressao);
             mosquitto_publish(mosq, NULL, "test/t1", 80, historico, 0, false);
+            */
         }
         /* Display = 0 Exibir medicoes no lcd | Dentro das funções de leitura */
         if (display == 0)
         {
             /*
                 Apertar um dos 3 botoes para a acessar os menus
-
                 Fica parado nessa exibiçao ate apertar novamente
                 para interagir com os menus
             */
             if ((digitalRead(21) == LOW) || (digitalRead(24) == LOW) || (digitalRead(25) == LOW))
             {
                 display = 1;
+                delay(50);
+                while ((digitalRead(21) == LOW) || (digitalRead(24) == LOW) || (digitalRead(25) == LOW))
+                    ; // aguarda enquato uma das 3 chaves chave ainda esta pressionada
+                delay(50);
                 lcdClear(lcd);
                 lcdPosition(lcd, 0, 0);
                 lcdPrintf(lcd, "Menu IHM: 1:Intv");
                 lcdPosition(lcd, 0, 1);
                 lcdPrintf(lcd, "2:ConfInt 3:Hist");
+
                 /*
                     Variaveis para exibicao do historico no LCD
                     salvando a posicao inicial e final do vetor
@@ -344,6 +357,9 @@ int main()
                 if (digitalRead(2) == LOW)
                 {
                     display = 0;
+                    /* zera variavel de controle para envio do intervalo */
+                    confirmar = 0;
+                    switch_2 = 0;
                 }
                 else
                 {
@@ -352,9 +368,12 @@ int main()
                     if (confirmar >= 2)
                     {
                         /* Formata como string, para passar como parametro no publish */
-                        sprintf(env_intervalo, "%i", aux_intervalo);
+                        char str_intervalo[2];
+                        sprintf(str_intervalo, "%i", aux_intervalo);
                         /* enviar intervalo via mqtt */
-                        mosquitto_publish(mosq, NULL, "test/intervalo", 1, intervalo, 0, false);
+                        mosquitto_publish(mosq, NULL, "teste/t2/intervalo/new", 2, str_intervalo, 0, false);
+                        /* altera o intervalo */
+                        intervalo = aux_intervalo;
                         lcdClear(lcd);
                         lcdPosition(lcd, 0, 0);
                         lcdPrintf(lcd, "Intervalo %i s", aux_intervalo);
@@ -427,8 +446,10 @@ int main()
                 }
                 confirmar = 0; /* zerar opcao de confirmar ao apertar outro botao */
             }
-            else if (digitalRead(0) == LOW)
+            /* Switch 2 */
+            else if ((digitalRead(0) == LOW) && switch_2 == 0)
             {
+                switch_2 = 1;
                 lcdClear(lcd);
                 lcdPosition(lcd, 0, 0);
                 lcdPrintf(lcd, "Testando a");
@@ -449,7 +470,7 @@ int main()
                     /* verifica se o tempo passado é menor que o intervalo */
                 } while (tempo_total < 1);
                 /* Se a conexao for 1 exibe msg que esta online */
-                if (conexao)
+                if (conexao == 1)
                 {
                     lcdClear(lcd);
                     lcdPosition(lcd, 0, 0);
@@ -457,7 +478,7 @@ int main()
                     lcdPosition(lcd, 0, 1);
                     lcdPrintf(lcd, "     ONLINE     ");
                     /* atribuir valor falso para evitar que o boolean fique sempre TRUE */
-                    conexao = false;
+                    conexao = 0;
                 }
                 /* Senao exibe msg que esta offline */
                 else
@@ -481,13 +502,14 @@ int main()
 
 void read_poten(int lcd, float arrLum[], int *FrontLum, int *RearLum, int FrLum, int ReLum, float arrPres[], int *FrontPres, int *RearPres, int FrPres, int RePres)
 {
-    enqueue(arrLum, readVoltage(1), FrontLum, RearLum, FrLum, ReLum);
-    enqueue(arrPres, readVoltage(0), FrontPres, RearPres, FrPres, RePres);
+    float read_pot_luminosidade = readVoltage(1);
+    float read_pot_pressao = readVoltage(0);
+    // enqueue(arrLum, read_pot_luminosidade, FrontLum, RearLum, FrLum, ReLum);
+    // enqueue(arrPres, read_pot_pressao, FrontPres, RearPres, FrPres, RePres);
     if (display == 0)
     {
-
         lcdPosition(lcd, 0, 1);
-        lcdPrintf(lcd, "L:%.1f%% P:%.1f", readVoltage(1), readVoltage(0));
+        lcdPrintf(lcd, "L:%.1f P:%.1f", read_pot_luminosidade, read_pot_pressao);
     }
 }
 
@@ -537,6 +559,7 @@ void read_dht11_dat(int lcd, float arrUmid[], int *FrontUmid, int *RearUmid, int
         (dht11_dat[4] == ((dht11_dat[0] + dht11_dat[1] + dht11_dat[2] + dht11_dat[3]) & 0xFF)))
     {
         f = dht11_dat[2] * 9. / 5. + 32;
+
         printf("\nHumidity = %d.%d %% Temperature = %d.%d C (%.1f F)\n\n",
                dht11_dat[0], dht11_dat[1], dht11_dat[2], dht11_dat[3], f);
 
@@ -546,25 +569,25 @@ void read_dht11_dat(int lcd, float arrUmid[], int *FrontUmid, int *RearUmid, int
         if (display == 0)
         {
             lcdPosition(lcd, 0, 0);
-            lcdPrintf(lcd, "U:%.1f%% T:%.1f", umidade, temperatura);
+            lcdPrintf(lcd, "U:%.1f%% T:%.1fC", umidade, temperatura);
         }
 
-        enqueue(arrUmid, umidade, FrontUmid, RearUmid, FrUmid, ReUmid);
-        enqueue(arrTemp, temperatura, FrontTemp, RearTemp, FrTemp, ReTemp);
+        // enqueue(arrUmid, umidade, FrontUmid, RearUmid, FrUmid, ReUmid);
+        // enqueue(arrTemp, temperatura, FrontTemp, RearTemp, FrTemp, ReTemp);
     }
     else
     {
         /* Display = 0 Exibir medicoes no lcd | Dentro das funções de leitura */
 
-        printf("Data not good, skip\n");
+        printf("\nData not good, skip\n\n");
         // Add -1.0 flag to show that the sensor didnt make a correct reading
         if (display == 0)
         {
             lcdPosition(lcd, 0, 0);
-            lcdPrintf(lcd, "U:-1 T:-1", umidade, temperatura);
+            lcdPrintf(lcd, "U:-1    T:-1    ");
         }
-        enqueue(arrUmid, -1.0, FrontUmid, RearUmid, FrUmid, ReUmid);
-        enqueue(arrTemp, -1.0, FrontTemp, RearTemp, FrTemp, ReTemp);
+        // enqueue(arrUmid, -1.0, FrontUmid, RearUmid, FrUmid, ReUmid);
+        // enqueue(arrTemp, -1.0, FrontTemp, RearTemp, FrTemp, ReTemp);
     }
 }
 
