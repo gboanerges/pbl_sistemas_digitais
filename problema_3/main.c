@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
-
+#include <stdbool.h>
 #include <unistd.h>
 #include <linux/i2c-dev.h>
 #include <sys/ioctl.h>
@@ -21,6 +21,14 @@
 #define LCD_D7 29 // Data pin 7
 #define MAXTIMINGS 85
 #define DHTPIN 1 // gpio 18
+
+#define BUTTON_1 21
+#define BUTTON_2 24
+#define BUTTON_3 25
+#define SWITCH_1 7
+#define SWITCH_2 0
+#define SWITCH_3 2
+#define SWITCH_4 3
 
 void read_dht11_dat(int lcd, float arrUmid[], int *FrontUmid, int *RearUmid, int FrUmid, int ReUmid, float arrTemp[], int *FrontTemp, int *RearTemp, int FrTemp, int ReTemp);
 void read_poten(int lcd, float arrLum[], int *FrontLum, int *RearLum, int FrLum, int ReLum, float arrPres[], int *FrontPres, int *RearPres, int FrPres, int RePres);
@@ -101,25 +109,14 @@ void formata_json(float arr[], char tipo_historico[], int ultima_func)
     strcat(tipo_historico, aux1);
 }
 
-void mudar_interv(char *msg)
-{
-    int aux = 0;
-    aux = atoi(msg);
-    printf("Intervalo recebido %i\n", aux);
-    /* Intervalo minimo igual a 2 */
-    if (intervalo >= 2)
-    {
-        intervalo = aux;
-    }
-}
-
 void send_intervalo(const char *msg_intervalo, int msg_tamanho, struct mosquitto *mosq)
 {
+    /* validacao do intervalo minimo na interface grafica */
     intervalo = atoi(msg_intervalo);
     printf("%s\n", msg_intervalo);
     mosquitto_publish(mosq, NULL, "teste/t2/intervalo/new", msg_tamanho, msg_intervalo, 0, true); // Envia uma mensagem com o intervalo, isso indica que o intervalo foi recebido por  que o intervalo foi alterado
 }
-
+/* Alterar topico para testar broker raspberry */
 void send_resposta(struct mosquitto *mosq)
 {
     mosquitto_publish(mosq, NULL, "teste/t2/ping/resposta", 1, "1", 0, false); // Envia uma mensagem para informar ao cliente remoto que está conectado (sistema online)
@@ -223,7 +220,7 @@ int main()
 
     mosquitto_lib_init();
 
-    mosq = mosquitto_new("publisher-test", true, NULL);
+    mosq = mosquitto_new("G03-IOT", true, NULL);
     mosquitto_connect_callback_set(mosq, on_connect);
     mosquitto_message_callback_set(mosq, on_message);
 
@@ -235,13 +232,12 @@ int main()
         mosquitto_destroy(mosq);
         return -1;
     }
+
     int FrontHist = 0, RearHist = 0;
-    /* Enviar o intervalo base logo a iniciar a execucao */
-    char str_intervalo[1];
-    sprintf(str_intervalo, "%i", intervalo);
-    mosquitto_publish(mosq, NULL, "teste/t2/intervalo/new", 1, str_intervalo, 0, false);
     /* Inicia loop para o subscriber do mosquitto ficar ativo */
     mosquitto_loop_start(mosq);
+    /* Enviar o intervalo base logo a iniciar a execucao */
+    mosquitto_publish(mosq, NULL, "teste/t2/intervalo/new", 1, "2", 0, false);
 
     int aux_intervalo = 2;
     int switch_2 = 0;
@@ -272,11 +268,11 @@ int main()
                 Fica parado nessa exibiçao ate apertar novamente
                 para interagir com os menus
             */
-            if ((digitalRead(21) == LOW) || (digitalRead(24) == LOW) || (digitalRead(25) == LOW))
+            if ((digitalRead(BUTTON_1) == LOW) || (digitalRead(BUTTON_2) == LOW) || (digitalRead(BUTTON_3) == LOW))
             {
                 display = 1;
                 delay(50);
-                while ((digitalRead(21) == LOW) || (digitalRead(24) == LOW) || (digitalRead(25) == LOW))
+                while ((digitalRead(BUTTON_1) == LOW) || (digitalRead(BUTTON_2) == LOW) || (digitalRead(BUTTON_3) == LOW))
                     ; // aguarda enquato uma das 3 chaves chave ainda esta pressionada
                 delay(50);
                 lcdClear(lcd);
@@ -297,15 +293,15 @@ int main()
         else /* Display = 1 Exibir menus, INC/DEC Intervalo, CONF Intervalo e HISTORICO */
         {
             /* Primeiro botao */
-            if (digitalRead(21) == LOW)
+            if (digitalRead(BUTTON_1) == LOW)
             {
                 /* mostrar menu para mudar intervalo */
                 /* switch 1 */
-                if (digitalRead(7) == LOW)
+                if (digitalRead(SWITCH_1) == LOW)
                 {
                     /* incrementar intervalo */
                     delay(50);
-                    while (digitalRead(21) == LOW)
+                    while (digitalRead(BUTTON_1) == LOW)
                         ; // aguarda enquato chave ainda esta pressionada
                     delay(50);
                     aux_intervalo++;
@@ -318,7 +314,7 @@ int main()
                 else
                 {
                     delay(50);
-                    while (digitalRead(21) == LOW)
+                    while (digitalRead(BUTTON_1) == LOW)
                         ; // aguarda enquato chave ainda esta pressionada
                     delay(50);
                     /* decrementar intervalo */
@@ -343,18 +339,18 @@ int main()
                 confirmar = 0; /* zerar opcao de confirmar ao apertar outro botao */
             }
             /* Segundo botao */
-            else if (digitalRead(24) == LOW)
+            else if (digitalRead(BUTTON_2) == LOW)
             {
                 /* Confirmar e enviar intervalo de medicao */
                 confirmar++;
                 delay(50);
-                while (digitalRead(24) == LOW)
+                while (digitalRead(BUTTON_2) == LOW)
                     ; // aguarda enquato chave ainda esta pressionada
                 delay(50);
 
                 /* switch 3 = 1 */
                 /* Alternar para visualização das medicoes dos sensores */
-                if (digitalRead(2) == LOW)
+                if (digitalRead(SWITCH_3) == LOW)
                 {
                     display = 0;
                     /* zera variavel de controle para envio do intervalo */
@@ -394,15 +390,16 @@ int main()
                 }
             }
             /* Ultimo botao */
-            else if (digitalRead(25) == LOW)
+            else if (digitalRead(BUTTON_3) == LOW)
             {
                 /* switch 4 for 1, incrementa o indice */
-                if (digitalRead(3) == LOW)
+                if (digitalRead(SWITCH_4) == LOW)
                 {
                     delay(50);
-                    while (digitalRead(25) == LOW)
+                    while (digitalRead(BUTTON_3) == LOW)
                         ; // aguarda enquato chave ainda esta pressionada
                     delay(50);
+
                     if (index_display == 9)
                     {
                         index_display = 0;
@@ -413,7 +410,6 @@ int main()
                         index_display++;
                         FrontHist++;
                     }
-
                     lcdClear(lcd);
                     lcdPosition(lcd, 0, 0);
                     lcdPrintf(lcd, "%i U:%.1f T:%.1f", (index_display + 1), umid[FrontHist], temp[FrontHist]);
@@ -424,9 +420,10 @@ int main()
                 else
                 { // decrementa o indice
                     delay(50);
-                    while (digitalRead(25) == LOW)
+                    while (digitalRead(BUTTON_3) == LOW)
                         ; // aguarda enquato chave ainda esta pressionada
                     delay(50);
+
                     if (index_display == 0)
                     {
                         index_display = 9;
@@ -437,17 +434,18 @@ int main()
                         index_display--;
                         FrontHist--;
                     }
+
                     lcdClear(lcd);
                     lcdPosition(lcd, 0, 0);
                     lcdPrintf(lcd, "%i U:%.1f T:%.1f", (index_display + 1), umid[FrontHist], temp[FrontHist]);
 
                     lcdPosition(lcd, 0, 1);
-                    lcdPrintf(lcd, "  L:%.1f P:%.1f", lum[FrontHist], pres[FrontHist]);
+                    lcdPrintf(lcd, "  L:%.1fV P:%.1fV", lum[FrontHist], pres[FrontHist]);
                 }
                 confirmar = 0; /* zerar opcao de confirmar ao apertar outro botao */
             }
             /* Switch 2 */
-            else if ((digitalRead(0) == LOW) && switch_2 == 0)
+            else if ((digitalRead(SWITCH_2) == LOW) && switch_2 == 0)
             {
                 switch_2 = 1;
                 lcdClear(lcd);
@@ -509,7 +507,7 @@ void read_poten(int lcd, float arrLum[], int *FrontLum, int *RearLum, int FrLum,
     if (display == 0)
     {
         lcdPosition(lcd, 0, 1);
-        lcdPrintf(lcd, "L:%.1f P:%.1f", read_pot_luminosidade, read_pot_pressao);
+        lcdPrintf(lcd, "L:%.1fV P:%.1fV", read_pot_luminosidade, read_pot_pressao);
     }
 }
 
@@ -584,7 +582,7 @@ void read_dht11_dat(int lcd, float arrUmid[], int *FrontUmid, int *RearUmid, int
         if (display == 0)
         {
             lcdPosition(lcd, 0, 0);
-            lcdPrintf(lcd, "U:-1    T:-1    ");
+            lcdPrintf(lcd, "U:-11,1 T:-11,1 ");
         }
         // enqueue(arrUmid, -1.0, FrontUmid, RearUmid, FrUmid, ReUmid);
         // enqueue(arrTemp, -1.0, FrontTemp, RearTemp, FrTemp, ReTemp);
