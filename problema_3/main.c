@@ -28,14 +28,11 @@
 #define SWITCH_1 7
 #define SWITCH_2 0
 #define SWITCH_3 2
-#define SWITCH_4 3
-
-void read_dht11_dat(int lcd, float arrUmid[], int *FrontUmid, int *RearUmid, int FrUmid, int ReUmid, float arrTemp[], int *FrontTemp, int *RearTemp, int FrTemp, int ReTemp);
-void read_poten(int lcd, float arrLum[], int *FrontLum, int *RearLum, int FrLum, int ReLum, float arrPres[], int *FrontPres, int *RearPres, int FrPres, int RePres);
+//#define SWITCH_4 3
 
 int dht11_dat[5] = {0, 0, 0, 0, 0};
 
-int index_display = 0, confirmar = 0, display = 0, intervalo = 2;
+int index_display = -1, confirmar = 0, display = 0, intervalo = 2;
 
 /* Interruption declarations */
 unsigned int flag;
@@ -46,28 +43,33 @@ void ISR(void)
 }
 /* END Interrption declarations */
 
-// Fila declaracoes
-#define SIZE 10
-void enqueue(float arr[], float data, int *Front, int *Rear, int Fr, int Re);
-void dequeue(float arr[], int *Front, int *Rear, int Fr, int Re);
-void show(float arr[], int Front, int Rear);
-float temp[SIZE];
-float umid[SIZE];
-float lum[SIZE];
-float pres[SIZE];
-// End
+// A linked list (LL) node to store a queue entry
+struct QNode
+{
+    float key;
+    struct QNode *next;
+};
 
-/* Variaveis para os vetores de medicoes */
-int RearUmid = -1, FrontUmid = -1;
-int RearTemp = -1, FrontTemp = -1;
-int RearLum = -1, FrontLum = -1;
-int RearPres = -1, FrontPres = -1;
+// The queue, front stores the front node of LL and rear stores the
+// last node of LL
+struct Queue
+{
+    struct QNode *front, *rear;
+};
+
+struct QNode *newNode(float k);
+struct Queue *createQueue();
+void deQueue(struct Queue *q);
+void enQueue(struct Queue *q, int k, int size);
+void printQueue(struct Queue *q);
+void read_dht11_dat(int lcd, struct Queue *umid, int sizeUmid, struct Queue *temp, int sizeTemp);
+void read_poten(int lcd, struct Queue *lumi, int sizeLumi, struct Queue *pressao, int sizePressao);
 
 /* Variaveis para formatar em JSON os vetores de medicoes */
-char historico[400] = "{\"historico_umidade\":[";
-char temperatura[128] = "\"historico_temperatura\":[";
-char lumino[128] = "\"historico_luminosidade\":[";
-char pressao[128] = "\"historico_pressao\":[";
+char historico[420] = "{\"historico_umidade\":[";
+char temperatura[110] = "\"historico_temperatura\":[";
+char lumino[110] = "\"historico_luminosidade\":[";
+char pressao[110] = "\"historico_pressao\":[";
 
 int conexao = 0;
 
@@ -75,32 +77,33 @@ int conexao = 0;
     Percorrer e formatar os arrays das medicoes, em float, para
     string no formato JSON
 */
-void formata_json(float arr[], char tipo_historico[], int ultima_func)
+void formata_json(struct Queue *q, char tipo_historico[], int sizeQueue, int ultima_func)
 {
-    // printf("%s\n", tipo_historico);
-    char aux1[1200] = "";
+    char aux1[90] = "";
+    struct Queue *aux = createQueue();
+    aux->front = q->front;
     int i = 0;
     char aux2[14];
-    /* Utilizando os indices da umidade, pois é a primeira a ser lida/alterada */
-    for (i = FrontUmid; i <= RearUmid; i++)
+    while (aux->front->next != NULL)
     {
-
-        if (i < RearUmid)
+        aux->front = aux->front->next;
+        if (i < sizeQueue)
         {
-            sprintf(aux2, "\"%.1f\",", arr[i]);
+            sprintf(aux2, "\"%.1f\",", aux->front->key);
             strcat(aux1, aux2);
+            i++;
         }
         else
         {
             /* Se for a ultima funcao de historico, nao coloca virgula no final*/
             if (ultima_func)
             {
-                sprintf(aux2, "\"%.1f\"]}", arr[i]);
+                sprintf(aux2, "\"%.1f\"]}", aux->front->key);
                 strcat(aux1, aux2);
             }
             else
             {
-                sprintf(aux2, "\"%.1f\"],", arr[i]);
+                sprintf(aux2, "\"%.1f\"],", aux->front->key);
                 strcat(aux1, aux2);
             }
         }
@@ -140,7 +143,7 @@ void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_messag
     if (strcmp((char *)msg->topic, "teste/t2/intervalo/send") == 0)
     {
         printf("%s\n", (char *)msg->payload);
-        send_intervalo((char *)msg->payload, msg->payload, mosq);
+        send_intervalo((char *)msg->payload, msg->payloadlen, mosq);
     }
     else if (strcmp((char *)msg->topic, "teste/t2/ping/pedido") == 0)
     {
@@ -207,6 +210,21 @@ int main()
 
     setI2CSlave(0x48);
 
+    struct Queue *umid = createQueue();
+    struct Queue *temp = createQueue();
+    struct Queue *lumi = createQueue();
+    struct Queue *pressao = createQueue();
+    int sizeUmid = -1, sizeTemp = -1, sizeLum = -1, sizePres = -1;
+    /* listas auxiliares para exibir historico na rasp */
+    struct Queue *auxUmi = createQueue();
+    struct Queue *auxTemp = createQueue();
+    struct Queue *auxLum = createQueue();
+    struct Queue *auxPres = createQueue();
+    int sizeAux = -1;
+    struct Queue *auxUmi2 = createQueue();
+    struct Queue *auxTemp2 = createQueue();
+    struct Queue *auxLum2 = createQueue();
+    struct Queue *auxPres2 = createQueue();
     lcdClear(lcd);
     lcdPosition(lcd, 0, 0);
     lcdPrintf(lcd, "Problema 03");
@@ -233,7 +251,6 @@ int main()
         return -1;
     }
 
-    int FrontHist = 0, RearHist = 0;
     /* Inicia loop para o subscriber do mosquitto ficar ativo */
     mosquitto_loop_start(mosq);
     /* Enviar o intervalo base logo a iniciar a execucao */
@@ -247,8 +264,12 @@ int main()
         if (flag == 1)
         {
             flag = 0;
-            read_dht11_dat(lcd, umid, &FrontUmid, &RearUmid, FrontUmid, RearUmid, temp, &FrontTemp, &RearTemp, FrontTemp, RearTemp);
-            read_poten(lcd, lum, &FrontLum, &RearLum, FrontLum, RearLum, pres, &FrontPres, &RearPres, FrontPres, RearPres);
+            read_dht11_dat(lcd, umid, sizeUmid, temp, sizeTemp);
+            sizeUmid++;
+            sizeTemp++;
+            read_poten(lcd, lumi, sizeLum, pressao, sizePres);
+            sizeLum++;
+            sizePres++;
             /*
             formata_json(umid, historico, 0);
             formata_json(temp, temperatura, 0);
@@ -282,12 +303,27 @@ int main()
                 lcdPrintf(lcd, "2:ConfInt 3:Hist");
 
                 /*
-                    Variaveis para exibicao do historico no LCD
-                    salvando a posicao inicial e final do vetor
-                    umidade - 1º a ser atualizado
+                    Salva as listas em listas auxiliares para exibir historico
                 */
-                FrontHist = FrontUmid;
-                RearHist = RearUmid;
+                auxUmi->front = umid->front;
+                auxTemp->front = temp->front;
+                auxLum->front = lumi->front;
+                auxPres->front = pressao->front;
+                /* listas para guardar a primeira posicao */
+                auxUmi2->front = umid->front;
+                auxTemp2->front = temp->front;
+                auxLum2->front = lumi->front;
+                auxPres2->front = pressao->front;
+                if (sizeUmid >= 10)
+                {
+                    sizeAux = 10;
+                }
+                else
+                {
+                    sizeAux = sizeUmid;
+                }
+                printQueue(temp);
+                printf("size aux %i\n", sizeAux);
             }
         }
         else /* Display = 1 Exibir menus, INC/DEC Intervalo, CONF Intervalo e HISTORICO */
@@ -393,56 +429,44 @@ int main()
             else if (digitalRead(BUTTON_3) == LOW)
             {
                 /* switch 4 for 1, incrementa o indice */
-                if (digitalRead(SWITCH_4) == LOW)
-                {
-                    delay(50);
-                    while (digitalRead(BUTTON_3) == LOW)
-                        ; // aguarda enquato chave ainda esta pressionada
-                    delay(50);
+                // if (digitalRead(SWITCH_4) == LOW)
+                // {
+                delay(50);
+                while (digitalRead(BUTTON_3) == LOW)
+                    ; // aguarda enquato chave ainda esta pressionada
+                delay(50);
+                /*
+                    Verifica o auxiliar de Umidade porque
+                    e o primeiro a ser inserido
+                */
+                printf("size %i\n", sizeAux);
 
-                    if (index_display == 9)
-                    {
-                        index_display = 0;
-                        FrontHist = RearHist - 9;
-                    }
-                    else
-                    {
-                        index_display++;
-                        FrontHist++;
-                    }
-                    lcdClear(lcd);
-                    lcdPosition(lcd, 0, 0);
-                    lcdPrintf(lcd, "%i U:%.1f T:%.1f", (index_display + 1), umid[FrontHist], temp[FrontHist]);
+                lcdClear(lcd);
+                lcdPosition(lcd, 0, 0);
+                lcdPrintf(lcd, "%i U:%.1f T:%.1f", (index_display + 1), auxUmi->front->key, auxTemp->front->key);
 
-                    lcdPosition(lcd, 0, 1);
-                    lcdPrintf(lcd, "  L:%.1f P:%.1f", lum[FrontHist], pres[FrontHist]);
-                }
-                else
-                { // decrementa o indice
-                    delay(50);
-                    while (digitalRead(BUTTON_3) == LOW)
-                        ; // aguarda enquato chave ainda esta pressionada
-                    delay(50);
-
-                    if (index_display == 0)
-                    {
-                        index_display = 9;
-                        FrontHist = RearHist;
-                    }
-                    else
-                    {
-                        index_display--;
-                        FrontHist--;
-                    }
-
-                    lcdClear(lcd);
-                    lcdPosition(lcd, 0, 0);
-                    lcdPrintf(lcd, "%i U:%.1f T:%.1f", (index_display + 1), umid[FrontHist], temp[FrontHist]);
-
-                    lcdPosition(lcd, 0, 1);
-                    lcdPrintf(lcd, "  L:%.1fV P:%.1fV", lum[FrontHist], pres[FrontHist]);
-                }
+                lcdPosition(lcd, 0, 1);
+                lcdPrintf(lcd, "  L:%.1f P:%.1f", auxLum->front->key, auxPres->front->key);
                 confirmar = 0; /* zerar opcao de confirmar ao apertar outro botao */
+                if ((index_display < sizeAux) && auxUmi->front != NULL)
+                {
+                    auxUmi->front = auxUmi->front->next;
+                    auxTemp->front = auxTemp->front->next;
+                    auxLum->front = auxLum->front->next;
+                    auxPres->front = auxPres->front->next;
+                    index_display++;
+
+                    // }
+                }
+                /* chegou no fim da lista, mudar ponteiro para o inicio */
+                else
+                {
+                    index_display = -1;
+                    auxUmi->front = auxUmi2->front;
+                    auxTemp->front = auxTemp2->front;
+                    auxLum->front = auxLum2->front;
+                    auxPres->front = auxPres2->front;
+                }
             }
             /* Switch 2 */
             else if ((digitalRead(SWITCH_2) == LOW) && switch_2 == 0)
@@ -498,12 +522,12 @@ int main()
     return 0;
 }
 
-void read_poten(int lcd, float arrLum[], int *FrontLum, int *RearLum, int FrLum, int ReLum, float arrPres[], int *FrontPres, int *RearPres, int FrPres, int RePres)
+void read_poten(int lcd, struct Queue *lumi, int sizeLumi, struct Queue *pressao, int sizePressao)
 {
     float read_pot_luminosidade = readVoltage(1);
     float read_pot_pressao = readVoltage(0);
-    // enqueue(arrLum, read_pot_luminosidade, FrontLum, RearLum, FrLum, ReLum);
-    // enqueue(arrPres, read_pot_pressao, FrontPres, RearPres, FrPres, RePres);
+    enQueue(lumi, read_pot_luminosidade, sizeLumi);
+    enQueue(pressao, read_pot_pressao, sizePressao);
     if (display == 0)
     {
         lcdPosition(lcd, 0, 1);
@@ -511,7 +535,7 @@ void read_poten(int lcd, float arrLum[], int *FrontLum, int *RearLum, int FrLum,
     }
 }
 
-void read_dht11_dat(int lcd, float arrUmid[], int *FrontUmid, int *RearUmid, int FrUmid, int ReUmid, float arrTemp[], int *FrontTemp, int *RearTemp, int FrTemp, int ReTemp)
+void read_dht11_dat(int lcd, struct Queue *umid, int sizeUmid, struct Queue *temp, int sizeTemp)
 {
     uint8_t laststate = HIGH;
     uint8_t counter = 0;
@@ -556,10 +580,8 @@ void read_dht11_dat(int lcd, float arrUmid[], int *FrontUmid, int *RearUmid, int
     if ((j >= 40) &&
         (dht11_dat[4] == ((dht11_dat[0] + dht11_dat[1] + dht11_dat[2] + dht11_dat[3]) & 0xFF)))
     {
-        f = dht11_dat[2] * 9. / 5. + 32;
 
-        printf("\nHumidity = %d.%d %% Temperature = %d.%d C (%.1f F)\n\n",
-               dht11_dat[0], dht11_dat[1], dht11_dat[2], dht11_dat[3], f);
+        // printf("\nHumidity = %d.%d %% Temperature = %d.%d C\n\n", dht11_dat[0], dht11_dat[1], dht11_dat[2], dht11_dat[3]);
 
         float umidade = dht11_dat[0] + ((float)dht11_dat[1] / 10);
         float temperatura = dht11_dat[2] + ((float)dht11_dat[3] / 10);
@@ -570,55 +592,94 @@ void read_dht11_dat(int lcd, float arrUmid[], int *FrontUmid, int *RearUmid, int
             lcdPrintf(lcd, "U:%.1f%% T:%.1fC", umidade, temperatura);
         }
 
-        // enqueue(arrUmid, umidade, FrontUmid, RearUmid, FrUmid, ReUmid);
-        // enqueue(arrTemp, temperatura, FrontTemp, RearTemp, FrTemp, ReTemp);
+        enQueue(umid, umidade, sizeUmid);
+        enQueue(temp, temperatura, sizeTemp);
     }
     else
     {
         /* Display = 0 Exibir medicoes no lcd | Dentro das funções de leitura */
 
-        printf("\nData not good, skip\n\n");
-        // Add -1.0 flag to show that the sensor didnt make a correct reading
+        // printf("\nData not good, skip\n\n");
+        //  Add -11.1 flag to show that the sensor didnt make a correct reading
         if (display == 0)
         {
             lcdPosition(lcd, 0, 0);
             lcdPrintf(lcd, "U:-11,1 T:-11,1 ");
         }
-        // enqueue(arrUmid, -1.0, FrontUmid, RearUmid, FrUmid, ReUmid);
-        // enqueue(arrTemp, -1.0, FrontTemp, RearTemp, FrTemp, ReTemp);
+        enQueue(umid, -11.1, sizeUmid);
+        enQueue(temp, -11.1, sizeTemp);
     }
 }
 
-void dequeue(float arr[], int *Front, int *Rear, int Fr, int Re)
+// A utility function to create a new linked list node.
+struct QNode *newNode(float k)
 {
-    *Front = *Front + 1;
-    return;
+    struct QNode *temp = (struct QNode *)malloc(sizeof(struct QNode));
+    temp->key = k;
+    temp->next = NULL;
+    return temp;
 }
 
-void enqueue(float arr[], float data, int *Front, int *Rear, int Fr, int Re)
+// A utility function to create an empty queue
+struct Queue *createQueue()
 {
-    if ((Re - Fr) == SIZE - 1)
+    struct Queue *q = (struct Queue *)malloc(sizeof(struct Queue));
+    q->front = q->rear = NULL;
+    return q;
+}
+
+// Function to remove a key from given queue q
+void deQueue(struct Queue *q)
+{
+    // If queue is empty, return NULL.
+    if (q->front == NULL)
+        return;
+
+    // Store previous front and move front one node ahead
+    struct QNode *temp = q->front;
+
+    q->front = q->front->next;
+
+    // If front becomes NULL, then change rear also as NULL
+    if (q->front == NULL)
+        q->rear = NULL;
+
+    free(temp);
+}
+
+// The function to add a key k to q
+void enQueue(struct Queue *q, int k, int size)
+{
+    // Create a new LL node
+    struct QNode *temp = newNode(k);
+
+    // If queue is empty, then new node is front and rear both
+    if (q->rear == NULL)
     {
-        dequeue(temp, Front, Rear, Fr, Re);
-        // return;
+        q->front = q->rear = temp;
+        return;
     }
 
-    if (Fr == -1)
-        *Front = 0;
+    if (size >= 10)
+    {
+        deQueue(q);
+    }
 
-    *Rear = *Rear + 1;
-    arr[Re + 1] = data;
+    // Add the new node at the end of queue and change rear
+    q->rear->next = temp;
+    q->rear = temp;
 }
 
-void show(float arr[], int Front, int Rear)
+void printQueue(struct Queue *q)
 {
-    if (Front == -1)
-        printf("Empty Queue \n");
-    else
+    printf("print\n");
+    struct Queue *aux = createQueue();
+    aux->front = q->front;
+    // printf("%d \n", q->front->key);
+    while (aux->front->next != NULL)
     {
-        printf("Queue: \n");
-        for (int i = Front; i <= Rear; i++)
-            printf("%.1f ", arr[i]);
-        printf("\n");
+        aux->front = aux->front->next;
+        printf("%.1f \n", aux->front->key);
     }
+    // printf("%d \n", aux->front->key);
 }
