@@ -68,10 +68,10 @@ Entre suas características principais, destacam-se a sua qualidade de serviço,
 
 Os tópicos que foram utilizados são: 
 
-- ping/pedido
-- ping/resposta
-- intervalo/send: subscriber no C, para receber o intervalo enviado pela interface gráfica
-- intervalo/new: envio de intervalo da raspberry para interface gráfica
+- `ping/pedido`: tópico para o envio do ping da interface remota para a estação de medição
+- `ping/resposta`: tópico responsável pelo envio do ping da estação de medição para a interface remota
+- `intervalo/send`: recebe o intervalo enviado pela interface gráfica
+- `intervalo/new`: envio de intervalo da raspberry para interface gráfica
 
 </p>
 
@@ -89,7 +89,28 @@ A função de interrupção altera o valor da variável 'flag' para 1 e dentro d
 <br><br>
 <strong>Vale ressaltar que é necessário instalar na placa Raspberry a biblioteca Mosquitto MQTT e a WiringPi. </strong>
 </p>
-  
+<h4  id="wiring">Instalar WiringPi e Mosquitto</h4>
+
+<p  align="justify">
+Para instalar a biblioteca WiringPi, numa raspberry com acesso a internet:
+</p>
+
+```bash
+# Clonar o repositório git do WiringPi
+git clone git://git.drogon.net/wiringPi
+# Acessar a pasta do repositório
+cd ~/wiringPi
+# Executar o script para instalar e aguardar finalizar
+./build
+```
+
+<p  align="justify">
+Para a biblioteca Mosquitto:
+</p>
+
+```
+sudo apt install -y mosquitto mosquitto-clients
+```
 <h2  id="python">Python - Interface remota</h2>
 
 <p  align="justify">
@@ -97,10 +118,11 @@ A interface remota (cliente remoto) foi desenvolvida em Python utilizando a bibl
 
 </p>
 
-<h3  id="guia-interface">Guia de uso - interface remota</h3>
+<h3  id="guia-interface">Interface remota</h3>
 
 <p  align="justify">
-A interface consiste em uma tela onde são exibidas as medidas dos sensores de acordo com o intervalo definido e um histórico das últimas 10 medidas recebidas.<br><br>
+A aplicação remota foi desenvolvida em Python, utilizando a biblioteca Tkinter para a construção da interface e a biblioteca Paho MQTT para implementação do protocolo MQTT.
+<br><br>
 Além disso, a interface exibe o status de conexão do cliente remoto com o broker e o status de conexão com a estação de medição, indicando se está OFFLINE ou ONLINE. A verificação de status de conexão com a estação é feito por meio de um sistema de ping, ou seja, o cliente remoto envia um sinal para a estação, se esse sinal for recebido de volta pelo cliente remoto significa que está conectado com a estação, caso contrário, não.
 <br><br>
 A interface dispõe também de um campo o qual pode ser inserido o intervalo de medição (em segundos) desejado. Após inserir o intervalo desejado é só apertar no botão ao lado da caixa de diálogo que o intervalo é enviado para a estação de medição. Após o intervalo ser recebido por a estação, o valor desse intervalo é retornado para a interface e, então, é exibido o novo intervalo de medição escolhido. Deste modo, garantimos que o intervalo que está sendo exibido no cliente remoto é igual ao configurado na estação de medição.
@@ -223,11 +245,9 @@ A instalação da biblioteca pode ser feita executando o comando:
 <br><br>
 
 ```bash
-
 # == No terminal do linux ou no Prompt de comando do Windows ==
 
 pip install paho-mqtt #Instalação da biblioteca MQTT Paho
-
 ```
 
 </p>
@@ -254,13 +274,8 @@ Para utilizar o projeto é necessário:
   
 
 ```bash
-
 # Acessar a pasta problema_3/
-
-  
-
 $ cd problema_3/
-
 ```
 
 <p  align="justify">
@@ -268,18 +283,11 @@ Na pasta problema_3 há dois arquivos, um do programa principal em C e outro da 
 
 </p>
 
-  
-
 ```bash
-
 # Compilar
-
 $ make
-
 # Executar o programa em C
-
 $ sudo ./main
-
 ```
 <br>
 
@@ -288,16 +296,13 @@ $ sudo ./main
   
 ```bash
 # Acessar a pasta problema_3/
-
 $ cd problema_3/
-
 ```
 
 Agora para executar o programa basta executar o comando:
 
 ```bash
 # Acessar a pasta cliente_python/
-
 $ python3 dashboard.py
 ```
 
@@ -327,42 +332,27 @@ Primeiro é necessário apertar 1 dos 3 botões, para desativar a exibição das
 
 
 ```
-
 1º Botão
 
 > Switch 1 = 0 -> Decrementar intervalo
-
 > Switch 1 = 1 -> Incrementar intervalo
-  
 
 2º Botão
 
 > Switch 3 = 0
 
-Pressionar 1ª vez aparece mensagem com
-
-o intervalo atual a ser enviado.
-
-Pressionar 2ª para enviar realmente o
-
-intervalo.
+Pressionar 1ª vez aparece mensagem como intervalo atual a ser enviado.
+Pressionar 2ª para enviar realmente o intervalo.
 
 > Switch 3 = 1
-
 Retorna a exibição das medições atuais
-
-  
 
 3º Botão
 
 > Switch 4 = 0 -> Decrementar indice do Histórico
-
 > Switch 4 = 1 -> Incrementar indice do Histórico
 
-  
-
 Switch 2 - mudar para 1 - Testa e exibe conexão
-
 ```
 <br>
 As imagens a seguir mostram o que aparece no display LCD ao interagir com a interface IHM.
@@ -436,7 +426,7 @@ Imagem 8 : 2º Switch - Teste de conexão com o Broker
 </div>
 <br>
 
-Já na a interface remota todas as informações do sistemas já estão disponíveis na pagina inicial, como mostra as imagens 9 e 10.
+Na interface remota todas as informações do sistemas já estão disponíveis na página inicial, como mostram as imagens 9 e 10.
 
 <div  id="image01" style="display: inline_block" align="center">
 
@@ -478,17 +468,15 @@ Identificação dos itens das imagens 9 e 10:
 <h2  id="considera" >Considerações finais</h2>
 
 <p  align="justify">
-O projeto cumpre os requisitos solicitados, embora haja espaço para melhorias.
+O projeto cumpre os requisitos solicitados, embora haja espaço para melhorias, tanto na IHM, quanto na interface remota, de forma a melhorar a operação do sistema como um todo.
 </p>
 
 
 <h2  id="equipe" >Equipe</h2>
   
-
 * Gustavo Boanerges
 
 * Igor Soares
-
 
 <h2  id="ref" >Referências externas</h2>
 
