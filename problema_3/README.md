@@ -45,7 +45,10 @@ Placas utilizadas:
 <h2 id="problema">Problema</h2>
 
 <p align="justify">
-Implementar um protótipo de um sistema para monitoramento ambiental que será posteriormente integrado a um sistema para monitoramento de cidades. O protótipo deve incluir todo o tratamento e controle de sensores analógicos e digitais, bem como uma IHM (interface Homem-Máquina) para apresentação das informações,incluindo históricos dos dados. O protótipo deve ser desenvolvido num SBC que medirá temperatura, umidade, pressão atmosférica e luminosidade. A IHM deve apresentar, em tempo real, as leituras atuais. Ela também deve permitir a visualização do histórico com as 10 últimas medições de cada sensor. O sistema deve permitir o ajuste local e remoto do intervalo de tempo que serão realizadas as medições.
+Implementar um protótipo de um sistema para monitoramento ambiental que será posteriormente integrado a um sistema para monitoramento de cidades. O protótipo deve incluir todo o tratamento e controle de sensores analógicos e digitais, bem como uma IHM (interface Homem-Máquina) para apresentação das informações,incluindo históricos dos dados.
+</p>
+<p align="justify">
+O protótipo deve ser desenvolvido num SBC que medirá temperatura, umidade, pressão atmosférica e luminosidade. A IHM deve apresentar, em tempo real, as leituras atuais. Ela também deve permitir a visualização do histórico com as 10 últimas medições de cada sensor. O sistema deve permitir o ajuste local e remoto do intervalo de tempo que serão realizadas as medições.
 </p>
 
 <h2 id="mqtt">MQTT</h2>
@@ -59,7 +62,11 @@ MQTT
 
 <p align="justify">
 
+No cliente em C, usou-se a biblioteca WiringPi, que possue funções prontas para utilização do display LCD e dos botões e switches do kit de extensão de GPIO.
 
+Para a contagem do intervalo de tempo, foi necessário ter uma thread a parte da thread principal. Como a biblioteca WiringPi possue threads, instancia-se uma PiThread que contém 2 loops. No primeiro, um while true, guarda o valor do tempo inicial e dentro deste, o segundo loop, um do-while, fica salvando o tempo final e testa se a diferença entre o tempo inicial e o tempo final é menor que o intervalo atual. Quando a difença for maior que o intervalo, sai do loop interno, chama a interrupção e volta ao primeiro loop.
+
+Interrupção
 
 </p>
 
@@ -213,6 +220,8 @@ Com o programa em C sendo executado, as medições atuais serão exibidas a cada
 
 <h2 id="demo" >Demonstração</h2>
 
+> INSTRUÇÕES DE USO DA IHM
+
 Exibir as imagens do lcd, da interface grafica
 
 <div id="image01" style="display: inline_block" align="center">
@@ -239,5 +248,6 @@ O projeto..
 <h2 id="ref" >Referências externas</h2>
 <p>Conteúdos que serviram de base para a construção do projeto:
  
-
+- [HOW TO SETUP AN LCD ON THE RASPBERRY PI AND PROGRAM IT WITH C](https://www.circuitbasics.com/raspberry-pi-lcd-set-up-and-programming-in-c-with-wiringpi/)
+- [HOW TO SET UP THE DHT11 HUMIDITY SENSOR ON THE RASPBERRY PI](https://www.circuitbasics.com/how-to-set-up-the-dht11-humidity-sensor-on-the-raspberry-pi/#:~:text=The%20DHT11%20has%20a%20surface,C)
 </p>
