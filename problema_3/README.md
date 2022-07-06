@@ -22,7 +22,7 @@
 
 </p>
 
-<h4 id="status" align="center"> 🚧  Em construção  🚧</h4>
+<h4 id="status" align="center"> ✅ Finalizado ✅ </h4>
 
 <h2 id="feat">Recursos implementados</h2>
 
@@ -199,8 +199,8 @@ $ make
 
 $ sudo ./main
 ```
-3) Com todas as ferramentas e bibliotecas instaladas, para executar o programa basta acessar a pasta do o arquivo dashboad.py e executá-lo. No linux via terminal pode ser feito da seguinte maneira:
-
+3) Com todas as ferramentas e bibliotecas instaladas, para executar o programa basta acessar a pasta do o arquivo dashboad.py e executá-lo. <strong>No linux via terminal pode ser feito da seguinte maneira:
+</strong>
 
 ```bash
 # Acessar a pasta problema_3/
@@ -215,29 +215,70 @@ $ python3 dashboard.py
 ```
 ---
 <p align="justify">
+
 Com o programa em C sendo executado, as medições atuais serão exibidas a cada contagem do intervalo de tempo configurado, no mínimo 2 segundos.
 
 </p>
 
 <h2 id="demo" >Demonstração</h2>
 
-> INSTRUÇÕES DE USO DA IHM
-
-Exibir as imagens do lcd, da interface grafica
+Ao executar o programa em C será escrito no LCD a seguinte mensagem:
 
 <div id="image01" style="display: inline_block" align="center">
-	
-</div>
-	
 
+![LCD_INICIO](https://raw.githubusercontent.com/gboanerges/pbl_sistemas_digitais/main/problema_3/assets/startLCD.gif "LCD_INICIO")
+
+GIF - Início do programa, LCD
+
+</div>
+
+Primeiro é necessário apertar 1 dos 3 botões, para desativar a exibição das medições atuais e poder utilizar os menus da interface homem-máquina (IHM) 
+```
+1º Botão 
+    > Switch 1 = 0 -> Decrementar intervalo
+	> Switch 1 = 1 -> Incrementar intervalo
+
+2º Botão
+	> Switch 3 = 0
+		Pressionar 1ª vez aparece mensagem com
+		o intervalo atual a ser enviado.
+		Pressionar 2ª para enviar realmente o 
+		intervalo.
+	> Switch 3 = 1
+		Retorna a exibição das medições atuais
+
+3º Botão
+	> Switch 4 = 0 -> Decrementar indice do Histórico
+	> Switch 4 = 1 -> Incrementar indice do Histórico
+
+Switch 2 - mudar para 1 - Testa e exibe conexao
+```
+	
+    
+<div id="image01" style="display: inline_block" align="center">
+
+![INCREMENTAR_INTERVALO](https://raw.githubusercontent.com/gboanerges/pbl_sistemas_digitais/main/problema_3/assets/intervaloINC.jpeg  "INCREMENTAR_INTERVALO")
+
+Imagem X - 1º Botão - Incrementar intervalo
+</div>
+
+<div id="image01" style="display: inline_block" align="center">
+
+![DECREMENTAR_INTERVALO](https://raw.githubusercontent.com/gboanerges/pbl_sistemas_digitais/main/problema_3/assets/intervaloDEC.jpeg  "DECREMENTAR_INTERVALO")
+
+Imagem X - 1º Botão - Decrementar intervalo
+
+</div>
 <h2 id="todo" >Recursos a serem implementados</h2>
 
+ - Exibir histórico na raspberry de forma dinamica.
+ - Garantir que os clientes remotos possuam o mesmo histórico de medições
 
 <h2 id="considera" >Considerações finais</h2>
 
 <p align="justify">
 
-O projeto..
+O projeto cumpre os requisitos solicitados. 
 
 </p>
 
