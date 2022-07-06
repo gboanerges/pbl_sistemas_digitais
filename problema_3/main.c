@@ -234,12 +234,12 @@ void send_intervalo(const char *msg_intervalo, int msg_tamanho, struct mosquitto
     /* validacao do intervalo minimo (2 segundos) na interface grafica */
     intervalo = atoi(msg_intervalo);
     printf("%s\n", msg_intervalo);
-    mosquitto_publish(mosq, NULL, "teste/t2/intervalo/new", msg_tamanho, msg_intervalo, 0, true); // Envia uma mensagem com o intervalo, isso indica que o intervalo foi recebido por  que o intervalo foi alterado
+    mosquitto_publish(mosq, NULL, "sd/pbl3/intervalo/new", msg_tamanho, msg_intervalo, 0, true); // Envia uma mensagem com o intervalo, isso indica que o intervalo foi recebido por  que o intervalo foi alterado
 }
 /* Alterar topico para testar broker raspberry */
 void send_resposta(struct mosquitto *mosq)
 {
-    mosquitto_publish(mosq, NULL, "teste/t2/ping/resposta", 1, "1", 0, false); // Envia uma mensagem para informar ao cliente remoto que está conectado (sistema online)
+    mosquitto_publish(mosq, NULL, "sd/pbl3/ping/resposta", 1, "1", 0, false); // Envia uma mensagem para informar ao cliente remoto que está conectado (sistema online)
 }
 
 void on_connect(struct mosquitto *mosq, void *obj, int rc)
@@ -250,24 +250,24 @@ void on_connect(struct mosquitto *mosq, void *obj, int rc)
         printf("Error with result code: %d\n", rc);
         exit(-1);
     }
-    char *subs[68] = {"teste/t2/ping/pedido", "teste/t2/ping/resposta", "teste/t2/intervalo/send"};
+    char *subs[68] = {"sd/pbl3/ping/pedido", "sd/pbl3/ping/resposta", "sd/pbl3/intervalo/send"};
     mosquitto_subscribe_multiple(mosq, NULL, 3, subs, 0, 0, NULL);
 }
 
 void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg)
 {
     printf("New message with topic %s: %s\n", msg->topic, (char *)msg->payload);
-    if (strcmp((char *)msg->topic, "teste/t2/intervalo/send") == 0)
+    if (strcmp((char *)msg->topic, "sd/pbl3/intervalo/send") == 0)
     {
         printf("%s\n", (char *)msg->payload);
         send_intervalo((char *)msg->payload, msg->payloadlen, mosq);
     }
-    else if (strcmp((char *)msg->topic, "teste/t2/ping/pedido") == 0)
+    else if (strcmp((char *)msg->topic, "sd/pbl3/ping/pedido") == 0)
     {
         send_resposta(mosq);
     }
     /* Testa a conexao com o BROKER */
-    if (strcmp((char *)msg->topic, "teste/t2/ping/resposta") == 0)
+    if (strcmp((char *)msg->topic, "sd/pbl3/ping/resposta") == 0)
     {
         /* altera variavel para representar que a conexao com o broker esta online */
         conexao = 1;
@@ -364,7 +364,7 @@ int main()
     /* Inicia loop para o subscriber do mosquitto ficar ativo */
     mosquitto_loop_start(mosq);
     /* Enviar o intervalo base logo a iniciar a execucao */
-    mosquitto_publish(mosq, NULL, "teste/t2/intervalo/new", 1, "2", 0, false);
+    mosquitto_publish(mosq, NULL, "sd/pbl3/intervalo/new", 1, "2", 0, false);
     /* Aloca espaco na memoria para as filas das medicoes atuais */
     umid = (float *)malloc(SIZE_ARRAY * sizeof(float));
     temp = (float *)malloc(SIZE_ARRAY * sizeof(float));
@@ -414,7 +414,7 @@ int main()
             /* formata a string com as medicoes atuais e a data */
             sprintf(medicoes_atuais, "{\"umidade\":\"%.1f\",\"temperatura\":\"%.1f\",\"luminosidade\":\"%.1f\",\"pressao\":\"%.1f\",\"datahora\":\"%s\"}", umidade_atual, temperatura_atual, luminosidade_atual, pressao_atual, data_atual);
             /* envia as medicoes atuais e a data das medicoes */
-            mosquitto_publish(mosq, NULL, "teste/t2/medidas", strlen(medicoes_atuais), medicoes_atuais, 0, false);
+            mosquitto_publish(mosq, NULL, "sd/pbl3/medidas", strlen(medicoes_atuais), medicoes_atuais, 0, false);
         }
         /*
             <Thread principal>
@@ -596,7 +596,7 @@ int main()
                         char str_intervalo[2];
                         sprintf(str_intervalo, "%i", aux_intervalo);
                         /* enviar intervalo via mqtt */
-                        mosquitto_publish(mosq, NULL, "teste/t2/intervalo/new", strlen(str_intervalo), str_intervalo, 0, false);
+                        mosquitto_publish(mosq, NULL, "sd/pbl3/intervalo/new", strlen(str_intervalo), str_intervalo, 0, false);
                         /* altera o intervalo */
                         intervalo = aux_intervalo;
                         lcdClear(lcd);
@@ -714,7 +714,7 @@ int main()
                     1 segundo, se houve resposta, a variavel conexao sera
                     igual a 1 (true)
                 */
-                mosquitto_publish(mosq, NULL, "teste/t2/ping/pedido", 1, "1", 0, false);
+                mosquitto_publish(mosq, NULL, "sd/pbl3/ping/pedido", 1, "1", 0, false);
                 /* Contar 1 segundo */
                 time_t inicio, fim;
                 double tempo_total;
