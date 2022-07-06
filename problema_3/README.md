@@ -52,38 +52,42 @@ Placas utilizadas:
 
 <p  align="justify">
 Implementar um protótipo de um sistema para monitoramento ambiental que será posteriormente integrado a um sistema para monitoramento de cidades. O protótipo deve incluir todo o tratamento e controle de sensores analógicos e digitais, bem como uma IHM (interface Homem-Máquina) para apresentação das informações,incluindo históricos dos dados.
-
-</p>
-
-<p  align="justify">
+<br><br>
 O protótipo deve ser desenvolvido num SBC que medirá temperatura, umidade, pressão atmosférica e luminosidade. A IHM deve apresentar, em tempo real, as leituras atuais. Ela também deve permitir a visualização do histórico com as 10 últimas medições de cada sensor. O sistema deve permitir o ajuste local e remoto do intervalo de tempo que serão realizadas as medições.
-
-</p:  
+<br><br>
+O sensor utilizado para umidade e temperatura foi o DHT11. Para a luminosidade e pressão atmosférica recorreu-se ao uso de 2 potenciometros e um conversor analógico-digital para simular os sensores destas duas grandezas.
+</p>  
 
 <h2  id="mqtt">MQTT</h2>
 
 <p  align="justify">
+Protocolo MQTT (Message Queuing Telemetry Transport) é um protocolo de transporte de mensagens de formato Cliente/Servidor, que possibilita a comunicação entre máquinas (Machine to Machine – M2M) e é amplamente usado para conectividade de IoT (Internet of Things). É aberto, leve e tem fácil implementação, sendo executado em TCP/IP ou em outros protocolos de rede.
+<br><br>
+Entre suas características principais, destacam-se a sua qualidade de serviço, maior nível de segurança, facilidade de aplicação, baixa alocação de banda e compatibilidade com linguagens de programação.
+<br><br>
 
+Os tópicos que foram utilizados são: 
 
-MQTT
-<br>
-TOPICOS UTILIZADOS
+- ping/pedido
+- ping/resposta
+- intervalo/send: subscriber no C, para receber o intervalo enviado pela interface gráfica
+- intervalo/new: envio de intervalo da raspberry para interface gráfica
 
 </p>
 
 <h2  id="codC">Programa em C</h2>
 
 <p  align="justify">
- O cliente em C é o responsável pela conexão entre sensores, envio das medições e interface homem-máquina.
+O cliente em C é o responsável pela conexão entre sensores, envio das medições e interface homem-máquina.
 <br><br>
-Usou-se a biblioteca WiringPi, que possue funções prontas para utilização do display LCD e dos botões e switches do kit de extensão de GPIO.
+Usou-se a biblioteca WiringPi, que possue funções prontas para utilização do display LCD e dos botões e switches do kit de extensão de GPIO. A interface homem-máquina (IHM) utiliza uma estrutura de if-else, checando se o botão X foi pressionado, e se o switch Y está em valor 1 ou 0. O guia de como utilizar o menu IHM está na seção Demonstração.
 <br><br>
- Para a contagem do intervalo de tempo, foi necessário ter uma thread a parte da thread principal. Aproveitando a biblioteca WiringPi , instancia-se uma PiThread que contém 2 loops. No primeiro, um while true, guarda o valor do tempo inicial e dentro deste, o segundo loop, um do-while, fica salvando o tempo final e testa se a diferença entre o tempo inicial e o tempo final é menor que o intervalo atual. Quando a diferença for maior que o intervalo, sai do loop interno, chama a interrupção e volta ao primeiro loop, testando novamente o intervalo. <br><br>
- A forma de teste permite que se um <strong> intervalo muito grande for determinado </strong> e o <strong>próximo intervalo utilizado for menor</strong>, a diferença entre eles é verificada, assim não é necessário esperar o intervalo maior empregado anteriormente. A cada passagem de intervalo, uma função de interrupção que altera uma variável que indica se houve a interrupção  e assim ocorre a leitura dos sensores, envio das medições atuais e escrita no lcd.
-
-<p  align="justify">
-Interrupção<br><br>
-A interface homem-máquina (IHM) utiliza uma estrutura de if-else, checando se o botão X foi pressionado, e se o switch Y está em valor 1 ou 0. 
+Para a contagem do intervalo de tempo, foi necessário ter uma thread a parte da thread principal. Aproveitando a biblioteca WiringPi , instancia-se uma PiThread que contém 2 loops. No primeiro, um while true, guarda o valor do tempo inicial e dentro deste, o segundo loop, um do-while, fica salvando o tempo final e testa se a diferença entre o tempo inicial e o tempo final é menor que o intervalo atual. Quando a diferença for maior que o intervalo, sai do loop interno, chama a interrupção e volta ao primeiro loop, testando novamente o intervalo. <br><br>
+A forma de teste permite que se um <strong> intervalo muito grande for determinado </strong> e o <strong>próximo intervalo utilizado for menor</strong>, a diferença entre eles é verificada, assim não é necessário esperar o intervalo maior empregado anteriormente. A cada passagem de intervalo, uma função de interrupção que altera uma variável que indica se houve a interrupção  e assim ocorre a leitura dos sensores, envio das medições atuais e escrita no lcd.
+<br><br>
+A função de interrupção altera o valor da variável 'flag' para 1 e dentro da thread principal há um 'if (flag==1)'. Assim ao ocorrer desta variável o código dentro deste if irá ser executado, sendo a primeira linha alterar 'flag' novamente para o valor 0.
+<br><br>
+<strong>Vale ressaltar que é necessário instalar na placa Raspberry a biblioteca Mosquitto MQTT e a WiringPi. </strong>
 </p>
   
 <h2  id="python">Python - Interface remota</h2>
@@ -279,25 +283,19 @@ $ sudo ./main
 ```
 <br>
 
-3) Com todas as ferramentas e bibliotecas instaladas, para executar o programa basta acessar a pasta do o arquivo dashboad.py e executá-lo. <strong>No linux via terminal pode ser feito da seguinte maneira:
-
-</strong>
-
+3) Para executar a aplicação remota em Python, basta acessar a pasta com o arquivo dashboad.py e executá-lo. Certifique-se de ter instalado no dispositivo todas as ferramentas necessárias.  <strong>No linux via terminal, a execução da aplicação pode ser feita da seguinte maneira:</strong>
+<br><br>
   
 ```bash
-
 # Acessar a pasta problema_3/
 
 $ cd problema_3/
 
 ```
 
-  
-
 Agora para executar o programa basta executar o comando:
 
 ```bash
-
 # Acessar a pasta cliente_python/
 
 $ python3 dashboard.py
@@ -436,12 +434,46 @@ Imagem 7 : 3º Botão - Histórico na Raspberry, "segunda página" de medições
 
 Imagem 8 : 2º Switch - Teste de conexão com o Broker
 </div>
+<br>
+
+Já na a interface remota todas as informações do sistemas já estão disponíveis na pagina inicial, como mostra as imagens 9 e 10.
+
+<div  id="image01" style="display: inline_block" align="center">
+
+![INT_GRAFICA1](https://raw.githubusercontent.com/gboanerges/pbl_sistemas_digitais/main/problema_3/assets/intGrafica9.jpeg  "INT_GRAFICA1")
+
+Imagem 9 : Interface gráfica pt.1
+</div>
+<br>
+
+<div  id="image01" style="display: inline_block" align="center">
+
+![INT_GRAFICA2](https://raw.githubusercontent.com/gboanerges/pbl_sistemas_digitais/main/problema_3/assets/intGrafica10.jpeg  "INT_GRAFICA2")
+
+Imagem 10 : Interface gráfica pt.2
+</div>
+<br>
+
+<p  align="justify">
+Identificação dos itens das imagens 9 e 10:
+
+1. Mostra as medições atuais recebidas da estação de medição.
+2. Mostra o histórico das 10 últimas medições recebidas na interface.
+3. Mostra o intervalo de medição atual configurado na estação de medição.
+4. Caixa de diálogo que permite enviar um novo intervalo de medição para estação.
+5. Botão para o envio do intervalo inserido na caixa de diálogo
+6. Status de conexão com o broker
+7. Status de conexão da interface remota com a estação de medição.
+8. Botão para reconexão com o broker, caso a conexão tenha sido perdida.
+</p>
 
 <h2  id="todo" >Recursos a serem implementados</h2>
  
 - Exibir histórico na Raspberry de forma dinâmica.
 
 - Garantir que os clientes remotos possuam o mesmo histórico de medições
+
+- Utilizar timer da placa Raspberry para contagem do intervalo de tempo
 
 <h2  id="considera" >Considerações finais</h2>
 
@@ -466,4 +498,5 @@ O projeto cumpre os requisitos solicitados, embora haja espaço para melhorias.
 
 - [HOW TO SET UP THE DHT11 HUMIDITY SENSOR ON THE RASPBERRY PI](https://www.circuitbasics.com/how-to-set-up-the-dht11-humidity-sensor-on-the-raspberry-pi/#:~:text=The%20DHT11%20has%20a%20surface,C)
 
+- [Interrupts short and simple: Part 1 – Good programming practices](https://www.embedded.com/interrupts-short-and-simple-part-1-good-programming-practices/)
 </p>
