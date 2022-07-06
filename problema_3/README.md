@@ -70,11 +70,11 @@ Entre suas características principais, destacam-se a sua qualidade de serviço,
 
 Os tópicos que foram utilizados são: 
 
-- `ping/pedido`: tópico para o envio do ping da interface remota para a estação de medição
-- `ping/resposta`: tópico responsável pelo envio do ping da estação de medição para a interface remota
-- `intervalo/send`: recebe o intervalo enviado pela interface gráfica
-- `intervalo/new`: envio de intervalo da raspberry para interface gráfica
-
+- `sd/pbl3/ping/pedido`: tópico para o envio do ping da interface remota para a estação de medição
+- `sd/pbl3/ping/resposta`: tópico responsável pelo envio do ping da estação de medição para a interface remota
+- `sd/pbl3/intervalo/send`: recebe o intervalo enviado pela interface gráfica
+- `sd/pbl3/intervalo/new`: envio de intervalo da raspberry para interface gráfica
+- `sd/pbl3/medidas`: por meio deste tópico as medições atuais dos sensores e a data da leitura são enviados
 </p>
 
 <h2  id="codC">Programa em C</h2>
@@ -263,11 +263,8 @@ pip install paho-mqtt #Instalação da biblioteca MQTT Paho
 
 Para utilizar o projeto é necessário:
 
-  
 
 1) Baixar este repositório
-
-  
 
 2) Compilar o programa em C
 
