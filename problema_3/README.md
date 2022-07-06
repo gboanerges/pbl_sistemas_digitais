@@ -1,8 +1,10 @@
 <h1  align="center">Problema 03 - IoT: A Internet das Coisas</h1>
 
-<p  align="center">Protótipo de um sistema IoT.
-
-<br>Metodologia PBL - MI - Sistemas Digitais 2022.1</p>
+<p  align="center">
+Protótipo de um sistema IoT.
+<br>
+Metodologia PBL - MI - Sistemas Digitais 2022.1
+</p>
 
 
 ## Tabela de conteúdos
@@ -109,7 +111,7 @@ Para a biblioteca Mosquitto:
 </p>
 
 ```
-sudo apt install -y mosquitto mosquitto-clients
+sudo apt-get install -y libmosquitto-dev
 ```
 <h2  id="python">Python - Interface remota</h2>
 
