@@ -65,7 +65,7 @@ MQTT
 
 No cliente em C, usou-se a biblioteca WiringPi, que possue funções prontas para utilização do display LCD e dos botões e switches do kit de extensão de GPIO.
 
-Para a contagem do intervalo de tempo, foi necessário ter uma thread a parte da thread principal. Como a biblioteca WiringPi possue threads, instancia-se uma PiThread que contém 2 loops. No primeiro, um while true, guarda o valor do tempo inicial e dentro deste, o segundo loop, um do-while, fica salvando o tempo final e testa se a diferença entre o tempo inicial e o tempo final é menor que o intervalo atual. Quando a difença for maior que o intervalo, sai do loop interno, chama a interrupção e volta ao primeiro loop.
+Para a contagem do intervalo de tempo, foi necessário ter uma thread a parte da thread principal. Como a biblioteca WiringPi possue threads, instancia-se uma PiThread que contém 2 loops. No primeiro, um while true, guarda o valor do tempo inicial e dentro deste, o segundo loop, um do-while, fica salvando o tempo final e testa se a diferença entre o tempo inicial e o tempo final é menor que o intervalo atual. Quando a difença for maior que o intervalo, sai do loop interno, chama a interrupção e volta ao primeiro loop. A forma de checagem permite que se um intervalo muito grande for determinado e o proximo intervalo utilizado for menor, a diferença entre eles é verificada, assim não é necessário esperar o intervalo maior empregado anteriormente. A cada passagem de intervalo, uma função de interrupção é chamada.
 
 Interrupção
 
