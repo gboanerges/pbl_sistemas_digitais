@@ -1,129 +1,77 @@
-
-  
-
 <h1  align="center">Problema 03 - IoT: A Internet das Coisas</h1>
 
 <p  align="center">Protótipo de um sistema IoT.
 
 <br>Metodologia PBL - MI - Sistemas Digitais 2022.1</p>
 
-  
 
 ## Tabela de conteúdos
-
-  
 
 <p  align="left">
 
 • <a  href="#status">Status</a> <br>
-
 • <a  href="#feat">Recursos implementados</a> <br>
-
 • <a  href="#tec">Tecnologias</a> <br>
-
 • <a  href="#problema"> Problema</a> <br>
-
 • <a  href="#mqtt">MQTT</a> <br>
-
 • <a  href="#codC">Programa em C</a> <br>
-
 • <a  href="#python">Python</a> <br>
-
 • <a  href="#guia">Guia de uso</a> <br>
-
 • <a  href="#demo">Demonstração</a> <br>
-
 • <a  href="#todo">Recursos a serem implementados</a> <br>
-
 • <a  href="#considera">Considerações finais</a> <br>
-
 • <a  href="#equipe">Equipe</a> <br>
-
 • <a  href="#ref">Referências externas</a>
-
-  
 
 </p>
 
-  
-
 <h4  id="status"  align="center"> ✅ Finalizado ✅ </h4>
-
-  
 
 <h2  id="feat">Recursos implementados</h2>
 
-  
-
 - [x] Codificação em C
-
 - [x] Usar protocolo MQTT
-
 - [x] IHM com botões e chaves (push-buttons e dip-switches)
-
 - [x] Interface gráfica para Desktop
-
 - [x] Informação sobre status da conexão
 
   
-
 <h2  id="tec" >🛠 Tecnologias </h2>
 
-  
-
 As seguintes ferramentas foram usadas na construção do projeto:
-
-  
 
 - C
 
 - Python
 
-  
-
 Placas utilizadas:
 
 - SBC : Raspberry Pi Zero
 
-  
-
 <h2  id="problema">Problema</h2>
 
-  
-
 <p  align="justify">
-
 Implementar um protótipo de um sistema para monitoramento ambiental que será posteriormente integrado a um sistema para monitoramento de cidades. O protótipo deve incluir todo o tratamento e controle de sensores analógicos e digitais, bem como uma IHM (interface Homem-Máquina) para apresentação das informações,incluindo históricos dos dados.
 
 </p>
 
 <p  align="justify">
-
 O protótipo deve ser desenvolvido num SBC que medirá temperatura, umidade, pressão atmosférica e luminosidade. A IHM deve apresentar, em tempo real, as leituras atuais. Ela também deve permitir a visualização do histórico com as 10 últimas medições de cada sensor. O sistema deve permitir o ajuste local e remoto do intervalo de tempo que serão realizadas as medições.
 
-</p>
-
-  
+</p:  
 
 <h2  id="mqtt">MQTT</h2>
 
-  
-
 <p  align="justify">
 
-  
 
 MQTT
 <br>
 TOPICOS UTILIZADOS
 
-  
-
 </p>
 
 <h2  id="codC">Programa em C</h2>
-
-  
 
 <p  align="justify">
  O cliente em C é o responsável pela conexão entre sensores, envio das medições e interface homem-máquina.
@@ -138,23 +86,10 @@ Interrupção<br><br>
 A interface homem-máquina (IHM) utiliza uma estrutura de if-else, checando se o botão X foi pressionado, e se o switch Y está em valor 1 ou 0. 
 </p>
   
-
-
-  
-
 <h2  id="python">Python - Interface remota</h2>
 
-  
-
 <p  align="justify">
-
-  
-
-A interface remota (cliente remoto) foi desenvolvida em Python utilizando a biblioteca Tkinter para a construção da interface e a biblioteca Paho MQTT para
-
-implementação do protocolo MQTT.
-
-  
+A interface remota (cliente remoto) foi desenvolvida em Python utilizando a biblioteca Tkinter para a construção da interface e a biblioteca Paho MQTT para implementação do protocolo MQTT.
 
 </p>
 
@@ -473,6 +408,7 @@ Imagem 4 : 2º Botão - Confirmar enviar intervalo
 <div  id="image01" style="display: inline_block" align="center">
 
 ![ENVIAR_INTERVALO2](https://raw.githubusercontent.com/gboanerges/pbl_sistemas_digitais/main/problema_3/assets/enviarIntervalo2.jpeg  "ENVIAR_INTERVALO2")
+
 Imagem 5 : 2º Botão -Intervalo enviado
 
 </div>
@@ -481,6 +417,7 @@ Imagem 5 : 2º Botão -Intervalo enviado
 <div  id="image01" style="display: inline_block" align="center">
 
 ![HISTORICO_1](https://raw.githubusercontent.com/gboanerges/pbl_sistemas_digitais/main/problema_3/assets/historicoRasp1.jpeg  "HISTORICO_1")
+
 Imagem 6 : 3º Botão - Histórico na Raspberry, "primeira página" de medições
 </div>
 <br>
@@ -488,6 +425,7 @@ Imagem 6 : 3º Botão - Histórico na Raspberry, "primeira página" de mediçõe
 <div  id="image01" style="display: inline_block" align="center">
 
 ![HISTORICO_2](https://raw.githubusercontent.com/gboanerges/pbl_sistemas_digitais/main/problema_3/assets/historicoRasp2.jpeg  "HISTORICO_2")
+
 Imagem 7 : 3º Botão - Histórico na Raspberry, "segunda página" de medições
 </div>
 <br>
@@ -501,7 +439,6 @@ Imagem 8 : 2º Switch - Teste de conexão com o Broker
 
 <h2  id="todo" >Recursos a serem implementados</h2>
  
-
 - Exibir histórico na Raspberry de forma dinâmica.
 
 - Garantir que os clientes remotos possuam o mesmo histórico de medições
