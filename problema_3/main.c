@@ -5,13 +5,14 @@
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
-#include <stdbool.h>
+
 #include <unistd.h>
 #include <linux/i2c-dev.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include "ads1115_rpi.h"
 #include <mosquitto.h>
+
 // USE WIRINGPI PIN NUMBERS
 #define LCD_RS 6  // Register select pin
 #define LCD_E 31  // Enable Pin
@@ -43,25 +44,154 @@ void ISR(void)
 }
 /* END Interrption declarations */
 
-void read_dht11_dat(int lcd, float arrUmid[], int *FrontUmid, int *RearUmid, int FrUmid, int ReUmid, float arrTemp[], int *FrontTemp, int *RearTemp, int FrTemp, int ReTemp);
-void read_poten(int lcd, float arrLum[], int *FrontLum, int *RearLum, int FrLum, int ReLum, float arrPres[], int *FrontPres, int *RearPres, int FrPres, int RePres);
+void read_dht11_dat(int lcd);
+void read_poten(int lcd);
 
 // Fila declaracoes
 #define SIZE 10
-void enqueue(float arr[], float data, int *Front, int *Rear, int Fr, int Re);
-void dequeue(float arr[], int *Front, int *Rear, int Fr, int Re);
-void show(float arr[], int Front, int Rear);
-float temp[SIZE];
-float umid[SIZE];
-float lum[SIZE];
-float pres[SIZE];
-// End
 
-/* Variaveis para os vetores de medicoes */
-int RearUmid = -1, FrontUmid = -1;
-int RearTemp = -1, FrontTemp = -1;
-int RearLum = -1, FrontLum = -1;
-int RearPres = -1, FrontPres = -1;
+int RearUmidade = -1;
+int FrontUmidade = -1;
+float umid[SIZE];
+int RearTemperatura = -1;
+int FrontTemperatura = -1;
+float temp[SIZE];
+int RearLuminosidade = -1;
+int FrontLuminosidade = -1;
+float lum[SIZE];
+int RearPressao = -1;
+int FrontPressao = -1;
+float pres[SIZE];
+
+void dequeue(int id_array)
+{
+    switch (id_array)
+    {
+    case 1:
+        // printf("Umidade DEQ\n");
+        if (FrontUmidade == -1 || FrontUmidade > RearUmidade)
+        {
+            printf("Underflow \n");
+            return;
+        }
+        else
+        {
+            // printf("Element deleted from the Queue UMID: %d\n", umid[FrontUmidade]);
+            FrontUmidade = FrontUmidade + 1;
+        }
+        break;
+    case 2:
+        // printf("Temperatura DEQ\n");
+        if (FrontTemperatura == -1 || FrontTemperatura > RearTemperatura)
+        {
+            printf("Underflow \n");
+            return;
+        }
+        else
+        {
+            // printf("Element deleted from the Queue TEMP: %d\n", temp[FrontTemperatura]);
+            FrontTemperatura = FrontTemperatura + 1;
+        }
+        break;
+    case 3:
+        // printf("Luminosidade DEQ\n");
+        if (FrontLuminosidade == -1 || FrontLuminosidade > RearLuminosidade)
+        {
+            printf("Underflow \n");
+            return;
+        }
+        else
+        {
+            // printf("Element deleted from the Queue TEMP: %d\n", lum[FrontLuminosidade]);
+            FrontLuminosidade = FrontLuminosidade + 1;
+        }
+        break;
+    case 4:
+        // printf("Pressao DEQ\n");
+        if (FrontPressao == -1 || FrontPressao > RearPressao)
+        {
+            printf("Underflow \n");
+            return;
+        }
+        else
+        {
+            // printf("Element deleted from the Queue TEMP: %d\n", lum[FrontPressao]);
+            FrontPressao = FrontPressao + 1;
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+void enqueue(float data, int id_array)
+{
+    switch (id_array)
+    {
+    case 1:
+        // printf("Umidade ENQUEUE %.1f\n", data);
+        if ((RearUmidade - FrontUmidade) == SIZE - 1)
+        {
+
+            // printf("Overflow \n");
+            dequeue(id_array);
+        }
+
+        if (FrontUmidade == -1)
+            FrontUmidade = 0;
+
+        RearUmidade = RearUmidade + 1;
+        umid[RearUmidade] = data;
+        break;
+    case 2:
+        // printf("Temperatura ENQUEUE %.1f\n", data);
+        if ((RearTemperatura - FrontTemperatura) == SIZE - 1)
+        {
+
+            // printf("Overflow \n");
+            dequeue(id_array);
+        }
+
+        if (FrontTemperatura == -1)
+            FrontTemperatura = 0;
+
+        RearTemperatura = RearTemperatura + 1;
+        temp[RearTemperatura] = data;
+        break;
+    case 3:
+        // printf("Luminosidade ENQUEUE %.1f\n", data);
+        if ((RearLuminosidade - FrontLuminosidade) == SIZE - 1)
+        {
+
+            // printf("Overflow \n");
+            dequeue(id_array);
+        }
+
+        if (FrontLuminosidade == -1)
+            FrontLuminosidade = 0;
+
+        RearLuminosidade = RearLuminosidade + 1;
+        lum[RearLuminosidade] = data;
+        break;
+    case 4:
+        // printf("Pressao ENQUEUE %.1f\n", data);
+        if ((RearPressao - FrontPressao) == SIZE - 1)
+        {
+
+            // printf("Overflow \n");
+            dequeue(id_array);
+        }
+
+        if (FrontPressao == -1)
+            FrontPressao = 0;
+
+        RearPressao = RearPressao + 1;
+        pres[RearPressao] = data;
+        break;
+    default:
+        break;
+    }
+}
 
 float umidade_atual = -1, temperatura_atual = -1, luminosidade_atual = -1, pressao_atual = -1;
 
@@ -77,33 +207,31 @@ int conexao = 0;
     Percorrer e formatar os arrays das medicoes, em float, para
     string no formato JSON
 */
-void formata_json(struct Queue *q, char tipo_historico[], int sizeQueue, int ultima_func)
+void formata_json(float arr[], char tipo_historico[], int ultima_func)
 {
-    char aux1[90] = "";
-    struct Queue *aux = createQueue();
-    aux->front = q->front;
+    // printf("%s\n", tipo_historico);
+    char aux1[1200] = "";
     int i = 0;
     char aux2[14];
-    while (aux->front->next != NULL)
+    /* Utilizando os indices da umidade, pois é a primeira a ser lida/alterada */
+    for (i = FrontUmidade; i <= RearUmidade; i++)
     {
-        aux->front = aux->front->next;
-        if (i < sizeQueue)
+        if (i < RearUmidade)
         {
-            sprintf(aux2, "\"%.1f\",", aux->front->key);
+            sprintf(aux2, "\"%.1f\",", arr[i]);
             strcat(aux1, aux2);
-            i++;
         }
         else
         {
             /* Se for a ultima funcao de historico, nao coloca virgula no final*/
             if (ultima_func)
             {
-                sprintf(aux2, "\"%.1f\"]}", aux->front->key);
+                sprintf(aux2, "\"%.1f\"]}", arr[i]);
                 strcat(aux1, aux2);
             }
             else
             {
-                sprintf(aux2, "\"%.1f\"],", aux->front->key);
+                sprintf(aux2, "\"%.1f\"],", arr[i]);
                 strcat(aux1, aux2);
             }
         }
@@ -192,14 +320,19 @@ int main()
     wiringPiSetup();
     lcd = lcdInit(2, 16, 4, LCD_RS, LCD_E, LCD_D4, LCD_D5, LCD_D6, LCD_D7, 0, 0, 0, 0);
 
-    pinMode(21, INPUT);            // configura pino como entrada
-    pullUpDnControl(21, PUD_DOWN); // configura resistor pull-up no pino
-    pinMode(24, INPUT);            // configura pino como entrada
-    pullUpDnControl(24, PUD_DOWN); // configura resistor pull-up no pino
-    pinMode(25, INPUT);            // configura pino como entrada
-    pullUpDnControl(25, PUD_DOWN); // configura resistor pull-up no pino
+    pinMode(BUTTON_1, INPUT);            // configura pino como entrada
+    pullUpDnControl(BUTTON_1, PUD_DOWN); // configura resistor pull-up no pino
+    pinMode(BUTTON_2, INPUT);            // configura pino como entrada
+    pullUpDnControl(BUTTON_2, PUD_DOWN); // configura resistor pull-up no pino
+    pinMode(BUTTON_3, INPUT);            // configura pino como entrada
+    pullUpDnControl(BUTTON_3, PUD_DOWN); // configura resistor pull-up no pino
 
-    int t = piThreadCreate(contar_interv);
+    pinMode(SWITCH_1, INPUT); // configura pino como entrada
+    pinMode(SWITCH_2, INPUT); // configura pino como entrada
+    pinMode(SWITCH_3, INPUT); // configura pino como entrada
+    pinMode(SWITCH_4, INPUT); // configura pino como entrada
+
+    int thread = piThreadCreate(contar_interv);
     /*
         Inicializar ADS
     */
@@ -208,7 +341,7 @@ int main()
         return EXIT_FAILURE;
     }
 
-    setI2CSlave(0x48);
+    // setI2CSlave(0x48);
 
     lcdClear(lcd);
     lcdPosition(lcd, 0, 0);
@@ -251,7 +384,7 @@ int main()
     /* variavel utilizada para escolher o intervalo na IHM  */
     int aux_intervalo = 2;
     int switch_2 = 0;
-    char medicoes_atuais[162];
+    char medicoes_atuais[111];
     char data_atual[19];
 
     time_t t;
@@ -262,8 +395,15 @@ int main()
         if (flag == 1)
         {
             flag = 0;
-            read_dht11_dat(lcd, umid, &FrontUmid, &RearUmid, FrontUmid, RearUmid, temp, &FrontTemp, &RearTemp, FrontTemp, RearTemp);
-            read_poten(lcd, lum, &FrontLum, &RearLum, FrontLum, RearLum, pres, &FrontPres, &RearPres, FrontPres, RearPres);
+            setI2CSlave(0x48);
+
+            read_dht11_dat(lcd);
+            read_poten(lcd);
+            printf("\nMEDICOES ATUAIS U:%.1f T:%.1f L:%.1f P:%.1f\n\n", umidade_atual, temperatura_atual, luminosidade_atual, pressao_atual);
+            enqueue(umidade_atual, 1);
+            enqueue(temperatura_atual, 2);
+            enqueue(luminosidade_atual, 3);
+            enqueue(pressao_atual, 4);
             /* Formatar data atual */
             t = time(NULL);
             tm = *localtime(&t);
@@ -271,7 +411,7 @@ int main()
 
             /* formata a string com as medicoes atuais */
             sprintf(medicoes_atuais, "{\"umidade\":\"%.1f\",\"temperatura\":\"%.1f\",\"luminosidade\":\"%.1f\",\"pressao\":\"%.1f\",\"datahora\":\"%s\"}", umidade_atual, temperatura_atual, luminosidade_atual, pressao_atual, data_atual);
-            mosquitto_publish(mosq, NULL, "teste/t2/medidas", 162, medicoes_atuais, 0, false);
+            mosquitto_publish(mosq, NULL, "teste/t2/medidas", strlen(medicoes_atuais), medicoes_atuais, 0, false);
 
             /*
             formata_json(umid, historico, 0);
@@ -281,7 +421,7 @@ int main()
             strcat(historico, temperatura);
             strcat(historico, lumino);
             strcat(historico, pressao);
-            mosquitto_publish(mosq, NULL, "test/t1", 80, historico, 0, false);
+            mosquitto_publish(mosq, NULL, "test/t1", strlen(historico), historico, 0, false);
             */
         }
         /* Display = 0 Exibir medicoes no lcd | Dentro das funções de leitura */
@@ -308,18 +448,24 @@ int main()
                 /*
                     Salva as listas em listas auxiliares para exibir historico
                 */
-                front_historico = FrontPres;
-                rear_historico = RearPres;
+                front_historico = FrontPressao;
+                rear_historico = RearPressao;
 
                 printf("f_hist %i\tr_hist %i\t%i\n", front_historico, rear_historico, (rear_historico - front_historico));
                 int j = 0;
                 /* percorre os arrays para salvar nos auxiliares de exibicao do historico no lcd */
+                printf("umid\ttemp\tlum\tpres\n");
                 for (int i = front_historico; i <= rear_historico; i++)
                 {
                     umidade_historico[j] = umid[i];
                     temperatura_historico[j] = temp[i];
                     luminosidade_historico[j] = lum[i];
                     pressao_historico[j] = pres[i];
+                    printf("%.1f\t", umidade_historico[i]);
+                    printf("%.1f\t", temperatura_historico[i]);
+                    printf("%.1f\t", luminosidade_historico[i]);
+                    printf("%.1f\t\n", pressao_historico[i]);
+
                     j++;
                 }
             }
@@ -389,6 +535,7 @@ int main()
                     display = 0;
                     /* zera variavel de controle para envio do intervalo */
                     confirmar = 0;
+                    index_display = -1;
                     switch_2 = 0;
                 }
                 else
@@ -401,7 +548,7 @@ int main()
                         char str_intervalo[2];
                         sprintf(str_intervalo, "%i", aux_intervalo);
                         /* enviar intervalo via mqtt */
-                        mosquitto_publish(mosq, NULL, "teste/t2/intervalo/new", 2, str_intervalo, 0, false);
+                        mosquitto_publish(mosq, NULL, "teste/t2/intervalo/new", strlen(str_intervalo), str_intervalo, 0, false);
                         /* altera o intervalo */
                         intervalo = aux_intervalo;
                         lcdClear(lcd);
@@ -438,6 +585,7 @@ int main()
                         e da frente, se estiver cheio (tamanho 10) index_display = 9
                         entao zera o indice
                     */
+
                     if (index_display == (rear_historico - front_historico))
                     {
                         index_display = 0;
@@ -446,12 +594,13 @@ int main()
                     {
                         index_display++;
                     }
+
                     lcdClear(lcd);
                     lcdPosition(lcd, 0, 0);
-                    lcdPrintf(lcd, "%i U:%.1f T:%.1f", (index_display + 1), umid[index_display], temp[index_display]);
+                    lcdPrintf(lcd, "U:%.1f%% T:%.1fC", umidade_historico[index_display], temperatura_historico[index_display]);
 
                     lcdPosition(lcd, 0, 1);
-                    lcdPrintf(lcd, "  L:%.1f P:%.1f", lum[index_display], pres[index_display]);
+                    lcdPrintf(lcd, "%i L:%.1fV P:%.1fV", (index_display + 1), luminosidade_historico[index_display], pressao_historico[index_display]);
                 }
                 else
                 { // decrementa o indice
@@ -483,10 +632,10 @@ int main()
 
                     lcdClear(lcd);
                     lcdPosition(lcd, 0, 0);
-                    lcdPrintf(lcd, "%i U:%.1f T:%.1f", (index_display + 1), umid[index_display], temp[index_display]);
+                    lcdPrintf(lcd, "U:%.1f%% T:%.1fC", umidade_historico[index_display], temperatura_historico[index_display]);
 
                     lcdPosition(lcd, 0, 1);
-                    lcdPrintf(lcd, "  L:%.1fV P:%.1fV", lum[index_display], pres[index_display]);
+                    lcdPrintf(lcd, "%i L:%.1fV P:%.1fV", (index_display + 1), luminosidade_historico[index_display], pressao_historico[index_display]);
                 }
                 confirmar = 0; /* zerar opcao de confirmar ao apertar outro botao */
             }
@@ -544,20 +693,19 @@ int main()
     return 0;
 }
 
-void read_poten(int lcd, float arrLum[], int *FrontLum, int *RearLum, int FrLum, int ReLum, float arrPres[], int *FrontPres, int *RearPres, int FrPres, int RePres)
+void read_poten(int lcd)
 {
     luminosidade_atual = readVoltage(1);
     pressao_atual = readVoltage(0);
-    enqueue(arrLum, luminosidade_atual, FrontLum, RearLum, FrLum, ReLum);
-    enqueue(arrPres, pressao_atual, FrontPres, RearPres, FrPres, RePres);
+
     if (display == 0)
     {
         lcdPosition(lcd, 0, 1);
-        lcdPrintf(lcd, "L:%.1fV P:%.1fV", luminosidade_atual, pressao_atual);
+        lcdPrintf(lcd, "L:%.1fV P:%.1fV   ", luminosidade_atual, pressao_atual);
     }
 }
 
-void read_dht11_dat(int lcd, float arrUmid[], int *FrontUmid, int *RearUmid, int FrUmid, int ReUmid, float arrTemp[], int *FrontTemp, int *RearTemp, int FrTemp, int ReTemp)
+void read_dht11_dat(int lcd)
 {
     uint8_t laststate = HIGH;
     uint8_t counter = 0;
@@ -603,8 +751,6 @@ void read_dht11_dat(int lcd, float arrUmid[], int *FrontUmid, int *RearUmid, int
         (dht11_dat[4] == ((dht11_dat[0] + dht11_dat[1] + dht11_dat[2] + dht11_dat[3]) & 0xFF)))
     {
 
-        // printf("\nHumidity = %d.%d %% Temperature = %d.%d C\n\n", dht11_dat[0], dht11_dat[1], dht11_dat[2], dht11_dat[3]);
-
         umidade_atual = dht11_dat[0] + ((float)dht11_dat[1] / 10);
         temperatura_atual = dht11_dat[2] + ((float)dht11_dat[3] / 10);
         /* Display = 0 Exibir medicoes no lcd | Dentro das funções de leitura */
@@ -613,43 +759,21 @@ void read_dht11_dat(int lcd, float arrUmid[], int *FrontUmid, int *RearUmid, int
             lcdPosition(lcd, 0, 0);
             lcdPrintf(lcd, "U:%.1f%% T:%.1fC", umidade_atual, temperatura_atual);
         }
-
-        enqueue(arrUmid, umidade_atual, FrontUmid, RearUmid, FrUmid, ReUmid);
-        enqueue(arrTemp, temperatura_atual, FrontTemp, RearTemp, FrTemp, ReTemp);
     }
     else
     {
 
-        // printf("\nData not good, skip\n\n");
         /* Display = 0 Exibir medicoes no lcd | Dentro das funções de leitura */
+
+        umidade_atual = -1.1;
+        temperatura_atual = -1.1;
+        /*
+            Add -11.1 flag to show that the sensor didnt make a correct reading
+        */
         if (display == 0)
         {
             lcdPosition(lcd, 0, 0);
-            lcdPrintf(lcd, "U:-11,1 T:-11,1 ");
+            lcdPrintf(lcd, "U:-1.1   T:-1.1  ");
         }
-        //   Add -11.1 flag to show that the sensor didnt make a correct reading
-        enqueue(arrUmid, -11.1, FrontUmid, RearUmid, FrUmid, ReUmid);
-        enqueue(arrTemp, -11.1, FrontTemp, RearTemp, FrTemp, ReTemp);
     }
-}
-
-void dequeue(float arr[], int *Front, int *Rear, int Fr, int Re)
-{
-    *Front = *Front + 1;
-    return;
-}
-
-void enqueue(float arr[], float data, int *Front, int *Rear, int Fr, int Re)
-{
-    if ((Re - Fr) == SIZE - 1)
-    {
-        dequeue(temp, Front, Rear, Fr, Re);
-        // return;
-    }
-
-    if (Fr == -1)
-        *Front = 0;
-
-    *Rear = *Rear + 1;
-    arr[Re + 1] = data;
 }
