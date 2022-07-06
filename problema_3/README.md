@@ -33,6 +33,7 @@
 - [x] Informação sobre status da conexão
 
 <h2 id="tec" >🛠 Tecnologias </h2> 
+
 As seguintes ferramentas foram usadas na construção do projeto: 
 
 -  C
@@ -97,7 +98,7 @@ Ferramentas necessárias:
 </p>
 
 <h4 class="instalacao">Instalação do Python</h4> 
-<p align="justify">
+<p align="left">
 Para a instalação do Python pode ser seguido o guia disponível na própria página do Python: https://wiki.python.org/moin/BeginnersGuide/Download
 </p>
 <h4 class="instalacao">Biblioteca Tkinter</h4> 
