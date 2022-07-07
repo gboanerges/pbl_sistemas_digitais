@@ -486,4 +486,5 @@ O projeto cumpre os requisitos solicitados, embora haja espaço para melhorias, 
 - [HOW TO SET UP THE DHT11 HUMIDITY SENSOR ON THE RASPBERRY PI](https://www.circuitbasics.com/how-to-set-up-the-dht11-humidity-sensor-on-the-raspberry-pi/#:~:text=The%20DHT11%20has%20a%20surface,C)
 
 - [Interrupts short and simple: Part 1 – Good programming practices](https://www.embedded.com/interrupts-short-and-simple-part-1-good-programming-practices/)
+- [MQTT in Python | building MQTT dashboard](https://www.youtube.com/watch?v=IQBWMHMTTO8)
 </p>
